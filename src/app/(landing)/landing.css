@@ -1,0 +1,70 @@
+@import 'tailwindcss';
+
+@config '../../../tailwind.config.mjs';
+
+@custom-variant md (@media (width >= 48rem));
+@custom-variant lg (@media (width >= 64rem));
+
+@theme inline {
+  --color-primary: #e65100;
+  --color-primary-container: #ff721a;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #fffbff;
+  --color-on-primary-fixed: #321200;
+  --color-primary-fixed: #ffdbc9;
+
+  --color-secondary: #a34b00;
+  --color-secondary-container: #ffe8da;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #853a00;
+
+  --color-tertiary: #5c5c5c;
+  --color-tertiary-container: #757474;
+  --color-on-tertiary: #ffffff;
+
+  --color-on-surface: #241913;
+  --color-on-surface-variant: #574237;
+  --color-on-background: #241913;
+
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-bright: #fffaf8;
+  --color-surface-dim: #f2ebe7;
+  --color-surface-container: #fcf5f1;
+  --color-surface-container-low: #faf7f5;
+  --color-surface-container-high: #f5ece8;
+  --color-surface-container-highest: #f4ede9;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-variant: #f4ede9;
+  --color-surface-tint: #e65100;
+
+  --color-outline: #8b7264;
+  --color-outline-variant: #dfc0b1;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+
+  --color-inverse-surface: #3b2e27;
+  --color-inverse-on-surface: #ffede5;
+  --color-inverse-primary: #ffb68c;
+
+  --font-headline: var(--font-plus-jakarta);
+  --font-body: var(--font-plus-jakarta);
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, #e65100 0%, #ff721a 100%);
+}
+
+.animate-scroll {
+  animation: scroll 40s linear infinite;
+}
+
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.carousel-track {
+  transition: transform 500ms ease-in-out;
+}

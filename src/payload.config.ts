@@ -5,13 +5,17 @@ import { buildConfig, PayloadRequest } from 'payload'
 import { fileURLToPath } from 'url'
 
 import { Categories } from './collections/Categories'
+import { Events } from './collections/Events'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
+import { TeamMembers } from './collections/TeamMembers'
 import { Users } from './collections/Users'
 import { Footer } from './Footer/config'
 import { Header } from './Header/config'
+import { LandingPage } from './LandingPage/config'
 import { plugins } from './plugins'
+import { syncGoogleCalendarHandler } from './jobs/syncGoogleCalendar'
 import { defaultLexical } from '@/fields/defaultLexical'
 import { getServerSideURL } from './utilities/getURL'
 
@@ -62,9 +66,9 @@ export default buildConfig({
       url: process.env.DATABASE_URL || '',
     },
   }),
-  collections: [Pages, Posts, Media, Categories, Users],
+  collections: [Pages, Posts, Events, Media, Categories, Users, TeamMembers],
   cors: [getServerSideURL()].filter(Boolean),
-  globals: [Header, Footer],
+  globals: [Header, Footer, LandingPage],
   plugins,
   secret: process.env.PAYLOAD_SECRET,
   sharp,
@@ -87,6 +91,24 @@ export default buildConfig({
         return authHeader === `Bearer ${secret}`
       },
     },
-    tasks: [],
+    tasks: [
+      {
+        slug: 'syncGoogleCalendar',
+        handler: syncGoogleCalendarHandler,
+        inputSchema: [],
+        outputSchema: [
+          { name: 'synced', type: 'number' },
+          { name: 'created', type: 'number' },
+          { name: 'updated', type: 'number' },
+        ],
+        retries: {
+          attempts: 2,
+          backoff: { type: 'exponential', delay: 60000 },
+        },
+        schedule: [{ cron: '0 6 * * *', queue: 'default' }],
+      },
+    ],
+    deleteJobOnComplete: true,
+    autoRun: [{ cron: '*/5 * * * *', queue: 'default' }],
   },
 })
