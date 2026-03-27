@@ -1,9 +1,10 @@
-import { sqliteAdapter } from '@payloadcms/db-sqlite'
-import sharp from 'sharp'
+import { postgresAdapter } from '@payloadcms/db-postgres'
 import path from 'path'
 import { buildConfig, PayloadRequest } from 'payload'
+import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
+import { defaultLexical } from '@/fields/defaultLexical'
 import { Categories } from './collections/Categories'
 import { Events } from './collections/Events'
 import { Media } from './collections/Media'
@@ -13,14 +14,22 @@ import { TeamMembers } from './collections/TeamMembers'
 import { Users } from './collections/Users'
 import { Footer } from './Footer/config'
 import { Header } from './Header/config'
+import { syncGoogleCalendarHandler } from './jobs/syncGoogleCalendar'
 import { LandingPage } from './LandingPage/config'
 import { plugins } from './plugins'
-import { syncGoogleCalendarHandler } from './jobs/syncGoogleCalendar'
-import { defaultLexical } from '@/fields/defaultLexical'
 import { getServerSideURL } from './utilities/getURL'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+
+const getDeploymentId = (): string | null =>
+  process.env.DEPLOYMENT_ID ||
+  process.env.SOURCE_COMMIT ||
+  process.env.VERCEL_GIT_COMMIT_SHA ||
+  process.env.RAILWAY_GIT_COMMIT_SHA ||
+  process.env.RENDER_GIT_COMMIT ||
+  process.env.HEROKU_RELEASE_VERSION ||
+  null
 
 export default buildConfig({
   admin: {
@@ -61,10 +70,12 @@ export default buildConfig({
   },
   // This config helps us configure global or default features that the other editors can inherit
   editor: defaultLexical,
-  db: sqliteAdapter({
-    client: {
-      url: process.env.DATABASE_URL || '',
+  db: postgresAdapter({
+    pool: {
+      connectionString: process.env.DATABASE_URL || '',
     },
+    push: false, // Don't auto-push schema changes
+    migrationDir: './migrations',
   }),
   collections: [Pages, Posts, Events, Media, Categories, Users, TeamMembers],
   cors: [getServerSideURL()].filter(Boolean),
@@ -110,5 +121,34 @@ export default buildConfig({
     ],
     deleteJobOnComplete: true,
     autoRun: [{ cron: '*/5 * * * *', queue: 'default' }],
+  },
+  onInit: async (payload) => {
+    const deploymentId = getDeploymentId()
+    if (!deploymentId) return
+
+    const key = 'jobs:syncGoogleCalendar:lastDeployment'
+
+    try {
+      const lastDeploymentId = await payload.kv.get<string>(key)
+      if (lastDeploymentId === deploymentId) return
+
+      await payload.jobs.queue({
+        task: 'syncGoogleCalendar',
+        input: {},
+        queue: 'deploy',
+      })
+
+      await payload.jobs.run({
+        queue: 'deploy',
+        limit: 1,
+        sequential: true,
+        overrideAccess: true,
+      })
+
+      await payload.kv.set(key, deploymentId)
+      payload.logger.info(`Queued deploy calendar sync for deployment ${deploymentId}`)
+    } catch (error) {
+      payload.logger.error(`Failed deploy calendar sync trigger: ${String(error)}`)
+    }
   },
 })
