@@ -22,14 +22,27 @@ import { getServerSideURL } from './utilities/getURL'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-const getDeploymentId = (): string | null =>
-  process.env.DEPLOYMENT_ID ||
-  process.env.SOURCE_COMMIT ||
-  process.env.VERCEL_GIT_COMMIT_SHA ||
-  process.env.RAILWAY_GIT_COMMIT_SHA ||
-  process.env.RENDER_GIT_COMMIT ||
-  process.env.HEROKU_RELEASE_VERSION ||
-  null
+const getDeploymentIdentity = (): { source: string; value: string } | null => {
+  const candidates: Array<{ source: string; value: string | undefined }> = [
+    { source: 'DEPLOYMENT_ID', value: process.env.DEPLOYMENT_ID },
+    { source: 'SOURCE_COMMIT', value: process.env.SOURCE_COMMIT },
+    { source: 'VERCEL_GIT_COMMIT_SHA', value: process.env.VERCEL_GIT_COMMIT_SHA },
+    { source: 'RAILWAY_GIT_COMMIT_SHA', value: process.env.RAILWAY_GIT_COMMIT_SHA },
+    { source: 'RENDER_GIT_COMMIT', value: process.env.RENDER_GIT_COMMIT },
+    { source: 'HEROKU_RELEASE_VERSION', value: process.env.HEROKU_RELEASE_VERSION },
+    // Coolify fallback: can change across deploys even if commit hash is missing.
+    { source: 'COOLIFY_CONTAINER_NAME', value: process.env.COOLIFY_CONTAINER_NAME },
+    { source: 'HOSTNAME', value: process.env.HOSTNAME },
+  ]
+
+  for (const candidate of candidates) {
+    if (candidate.value) {
+      return { source: candidate.source, value: candidate.value }
+    }
+  }
+
+  return null
+}
 
 export default buildConfig({
   admin: {
@@ -123,8 +136,15 @@ export default buildConfig({
     autoRun: [{ cron: '*/5 * * * *', queue: 'default' }],
   },
   onInit: async (payload) => {
-    const deploymentId = getDeploymentId()
-    if (!deploymentId) return
+    const deploymentIdentity = getDeploymentIdentity()
+    if (!deploymentIdentity) {
+      payload.logger.warn(
+        'Skipping deploy calendar sync: no deployment identity env var found. Set DEPLOYMENT_ID if needed.',
+      )
+      return
+    }
+
+    const deploymentId = `${deploymentIdentity.source}:${deploymentIdentity.value}`
 
     const key = 'jobs:syncGoogleCalendar:lastDeployment'
 
@@ -136,6 +156,7 @@ export default buildConfig({
         task: 'syncGoogleCalendar',
         input: {},
         queue: 'deploy',
+        overrideAccess: true,
       })
 
       await payload.jobs.run({
