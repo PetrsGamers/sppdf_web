@@ -8,7 +8,7 @@ export const revalidateLandingPage: GlobalAfterChangeHook = ({
 }) => {
   if (!context.disableRevalidate) {
     payload.logger.info(`Revalidating landing page`)
-    revalidatePath('/landing')
+    revalidatePath('/')
   }
 
   return doc
