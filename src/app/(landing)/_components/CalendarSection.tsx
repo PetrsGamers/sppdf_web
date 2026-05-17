@@ -144,15 +144,8 @@ export function CalendarSection({ events }: Props) {
 
         {/* Integrated CTA */}
         <div className="md:col-span-12">
-          <div className="group relative bg-stone-900 rounded-[2rem] p-8 overflow-hidden flex flex-col md:flex-row items-center justify-between border border-stone-800 transition-all hover:bg-stone-950">
-            <div className="absolute inset-0 opacity-20 pointer-events-none">
-              <img
-                alt="Pattern"
-                className="w-full h-full object-cover"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQmtily0pgDMjCsFm3UNBOE9LG8OwHzuXSFQaspshtF5RP0pqRDP3TOqc0xvEPmHxeRTnLIH2dyUYdFiqSVVK0jRRDkdWBmZvgIgy1Cdv8Gz5xQi4kVkxcXzYe2eHycBnJtDXpVC3JBnmxwwXOlOkckqwsclRzwAzDL64BTl7KDhXinuaGwHsoyI1w9DoMINVItH4ZmgvysRAJ7dGSYHsf9yKWJ8P9N5iSo1IiIlYDac6rcz79PHqy2dKTbEjCUnRuZ7EzSAXT4lur"
-              />
-            </div>
-            <div className="relative z-10 text-center md:text-left mb-6 md:mb-0">
+          <div className="group relative bg-stone-900 rounded-[2rem] p-8 flex flex-col md:flex-row items-center justify-between border border-stone-800 transition-all hover:bg-stone-950">
+            <div className="text-center md:text-left mb-6 md:mb-0">
               <h3 className="text-2xl md:text-3xl font-black text-white font-headline tracking-tighter">
                 Zajímá vás kompletní program?
               </h3>
@@ -160,10 +153,10 @@ export function CalendarSection({ events }: Props) {
                 Podívejte se na všechny plánované akce v našem interaktivním kalendáři.
               </p>
             </div>
-            <div className="relative z-10">
+            <div>
               <a
                 className="inline-flex items-center gap-3 bg-white text-stone-900 px-8 py-4 rounded-xl font-headline font-extrabold text-lg hover:bg-primary hover:text-white transition-all transform active:scale-95"
-                href="#"
+                href="/calendar"
               >
                 Prohlédnout celý měsíc
                 <span className="material-symbols-outlined">calendar_month</span>
