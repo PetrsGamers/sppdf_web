@@ -11,13 +11,15 @@ export const revalidateEvent: CollectionAfterChangeHook<Event> = ({
 }) => {
   if (!context.disableRevalidate) {
     if (doc._status === 'published') {
-      payload.logger.info(`Revalidating landing page for event: ${doc.title}`)
+      payload.logger.info(`Revalidating landing page and calendar for event: ${doc.title}`)
       revalidatePath('/')
+      revalidatePath('/calendar')
     }
 
     if (previousDoc._status === 'published' && doc._status !== 'published') {
-      payload.logger.info(`Revalidating landing page for unpublished event: ${doc.title}`)
+      payload.logger.info(`Revalidating landing page and calendar for unpublished event: ${doc.title}`)
       revalidatePath('/')
+      revalidatePath('/calendar')
     }
   }
   return doc
@@ -29,6 +31,7 @@ export const revalidateEventDelete: CollectionAfterDeleteHook<Event> = ({
 }) => {
   if (!context.disableRevalidate) {
     revalidatePath('/')
+    revalidatePath('/calendar')
   }
 
   return doc
