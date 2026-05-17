@@ -12,12 +12,12 @@ export const revalidateEvent: CollectionAfterChangeHook<Event> = ({
   if (!context.disableRevalidate) {
     if (doc._status === 'published') {
       payload.logger.info(`Revalidating landing page for event: ${doc.title}`)
-      revalidatePath('/landing')
+      revalidatePath('/')
     }
 
     if (previousDoc._status === 'published' && doc._status !== 'published') {
       payload.logger.info(`Revalidating landing page for unpublished event: ${doc.title}`)
-      revalidatePath('/landing')
+      revalidatePath('/')
     }
   }
   return doc
@@ -28,7 +28,7 @@ export const revalidateEventDelete: CollectionAfterDeleteHook<Event> = ({
   req: { context },
 }) => {
   if (!context.disableRevalidate) {
-    revalidatePath('/landing')
+    revalidatePath('/')
   }
 
   return doc
