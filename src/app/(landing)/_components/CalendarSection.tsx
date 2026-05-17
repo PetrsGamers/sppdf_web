@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import type { Event } from '@/payload-types'
 
 type Props = {
@@ -25,7 +26,7 @@ export function CalendarSection({ events }: Props) {
   const pageSize = 3
   const totalPages = Math.ceil(events.length / pageSize)
   const [page, setPage] = useState(0)
-  const [activeId, setActiveId] = useState<string | null>(events[0]?.id ?? null)
+  const [activeId, setActiveId] = useState<number | null>(events[0]?.id ?? null)
 
   const pageEvents = events.slice(page * pageSize, page * pageSize + pageSize)
 
@@ -134,13 +135,13 @@ export function CalendarSection({ events }: Props) {
               Podívejte se na všechny plánované akce v našem interaktivním kalendáři.
             </p>
           </div>
-          <a
+          <Link
             href="/calendar"
             className="inline-flex items-center gap-3 bg-white text-stone-900 px-8 py-4 rounded-xl font-headline font-extrabold text-lg hover:bg-primary hover:text-white transition-all active:scale-95"
           >
             Prohlédnout celý měsíc
             <span className="material-symbols-outlined">calendar_month</span>
-          </a>
+          </Link>
         </div>
       </div>
     </section>
