@@ -1809,40 +1809,55 @@ export interface Footer {
   createdAt?: string | null;
 }
 /**
+ * Texty a obrázky hlavní stránky. V záložkách „Menu“ a „Patička“ upravíte také horní menu a patičku, které se zobrazují na všech stránkách webu. Změny se na webu projeví hned po uložení.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "landing-page".
  */
 export interface LandingPage {
   id: number;
-  nav?: {
-    links?:
-      | {
-          label: string;
-          url: string;
-          id?: string | null;
-        }[]
-      | null;
-    ctaLabel?: string | null;
-    ctaLink?: string | null;
-  };
   hero: {
+    /**
+     * Malý barevný štítek nad hlavním nadpisem. Prázdné = štítek se nezobrazí.
+     */
     badge?: string | null;
     /**
-     * Use {{text}} to wrap words in the primary color. E.g. "Inspirujeme {{budoucí}} učitele."
+     * Slova ve dvojitých složených závorkách se zvýrazní barvou spolku. Např. „Inspirujeme {{budoucí}} učitele.“
      */
     headline: string;
+    /**
+     * Krátký text pod nadpisem. Nepovinné.
+     */
     subtitle?: string | null;
     ctaPrimary?: {
+      /**
+       * Prázdné = tlačítko se nezobrazí.
+       */
       label?: string | null;
+      /**
+       * Hodnota # znamená, že tlačítko nikam nevede. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+       */
       link?: string | null;
     };
     ctaSecondary?: {
+      /**
+       * Prázdné = tlačítko se nezobrazí.
+       */
       label?: string | null;
+      /**
+       * Hodnota # znamená, že tlačítko nikam nevede. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+       */
       link?: string | null;
     };
+    /**
+     * Velká fotka vpravo od nadpisu (na šířku, ideálně alespoň 1200 px). Popis obrázku (alt) vyplňte přímo u obrázku v sekci Obrázky a soubory.
+     */
     image?: (number | null) | Media;
   };
   ribbon?: {
+    /**
+     * Krátká hesla nebo názvy akcí, které běží dokola. Pořadí změníte přetažením. Pokud seznam necháte úplně prázdný, zobrazí se výchozí ukázkové texty.
+     */
     items?:
       | {
           text: string;
@@ -1850,42 +1865,106 @@ export interface LandingPage {
         }[]
       | null;
   };
+  calendarSection?: {
+    heading?: string | null;
+    description?: string | null;
+    endCardTitle?: string | null;
+    endCardText?: string | null;
+    ctaHeading?: string | null;
+    ctaText?: string | null;
+    ctaButtonLabel?: string | null;
+    /**
+     * Obvykle /calendar. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+     */
+    ctaButtonLink?: string | null;
+  };
   divisions?: {
     heading?: string | null;
     description?: string | null;
+    /**
+     * Každá karta = jedna sekce spolku. Pořadí změníte přetažením. Když nebude žádná karta, celý blok se skryje.
+     */
     items?:
       | {
+          title: string;
           /**
-           * Material Symbol name, e.g. "devices"
+           * Anglický název ikony ze sady Material Symbols, malými písmeny a s podtržítky (např. groups, celebration, school, photo_camera, mail). Všechny ikony najdete na https://fonts.google.com/icons – klikněte na ikonu a zkopírujte její název.
            */
           icon: string;
-          title: string;
           description?: string | null;
+          /**
+           * Fotka na šířku. Bez obrázku se zobrazí šedá plocha.
+           */
           image?: (number | null) | Media;
+          /**
+           * Prázdné = odkaz se nezobrazí.
+           */
           linkLabel?: string | null;
+          /**
+           * Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+           */
           linkUrl?: string | null;
           id?: string | null;
         }[]
       | null;
   };
-  footer?: {
-    description?: string | null;
-    socialLinks?:
+  nav?: {
+    /**
+     * Odkazy v horním menu. Pořadí změníte přetažením. Pokud seznam necháte prázdný, zobrazí se Domů / O nás / Kalendář.
+     */
+    links?:
       | {
+          label: string;
           /**
-           * Material Symbol name
+           * Např. /, /aboutus nebo /calendar. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
            */
-          icon: string;
           url: string;
           id?: string | null;
         }[]
       | null;
+    /**
+     * Prázdné = tlačítko se nezobrazí.
+     */
+    ctaLabel?: string | null;
+    /**
+     * Např. odkaz na přihlášku do spolku. Hodnota # znamená, že tlačítko nikam nevede. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+     */
+    ctaLink?: string | null;
+  };
+  footer?: {
+    description?: string | null;
+    /**
+     * Kulaté ikonky s odkazy (Instagram, Facebook, e-mail…). Pokud seznam necháte prázdný, zobrazí se dvě ukázkové ikonky bez odkazu.
+     */
+    socialLinks?:
+      | {
+          /**
+           * Např. Instagram. Na webu není vidět, ale přečte ho hlasová čtečka pro nevidomé.
+           */
+          label?: string | null;
+          /**
+           * Anglický název ikony ze sady Material Symbols, malými písmeny a s podtržítky (např. groups, celebration, school, photo_camera, mail). Všechny ikony najdete na https://fonts.google.com/icons – klikněte na ikonu a zkopírujte její název.
+           */
+          icon: string;
+          /**
+           * Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+           */
+          url: string;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Sloupce odkazů vpravo v patičce (např. „Rychlé odkazy“, „Informace“). Pokud seznam necháte prázdný, zobrazí se výchozí sloupce.
+     */
     linkColumns?:
       | {
           heading: string;
           links?:
             | {
                 label: string;
+                /**
+                 * Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+                 */
                 url: string;
                 id?: string | null;
               }[]
@@ -1893,7 +1972,28 @@ export interface LandingPage {
           id?: string | null;
         }[]
       | null;
+    /**
+     * Text úplně dole. Napište {rok} a web místo něj doplní aktuální rok (např. „© {rok} SPPDF“).
+     */
     copyright?: string | null;
+    /**
+     * Malý šedý text vpravo dole. Prázdné = nezobrazí se.
+     */
+    credit?: string | null;
+  };
+  seo?: {
+    /**
+     * Zobrazuje se v záložce prohlížeče, ve výsledcích Googlu a při sdílení odkazu. Ideálně do 60 znaků. Když necháte prázdné, použije se výchozí titulek z Nastavení webu.
+     */
+    title?: string | null;
+    /**
+     * Krátké shrnutí stránky (1–2 věty, ideálně do 160 znaků) pro Google a náhled při sdílení na sociálních sítích. Když necháte prázdné, použije se výchozí popis z Nastavení webu.
+     */
+    description?: string | null;
+    /**
+     * Obrázek, který se ukáže při sdílení odkazu (Facebook, WhatsApp, Messenger…). Ideální rozměr 1200 × 630 px. Když necháte prázdné, použije se výchozí obrázek z Nastavení webu.
+     */
+    image?: (number | null) | Media;
   };
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1967,19 +2067,6 @@ export interface FooterSelect<T extends boolean = true> {
  * via the `definition` "landing-page_select".
  */
 export interface LandingPageSelect<T extends boolean = true> {
-  nav?:
-    | T
-    | {
-        links?:
-          | T
-          | {
-              label?: T;
-              url?: T;
-              id?: T;
-            };
-        ctaLabel?: T;
-        ctaLink?: T;
-      };
   hero?:
     | T
     | {
@@ -2010,6 +2097,18 @@ export interface LandingPageSelect<T extends boolean = true> {
               id?: T;
             };
       };
+  calendarSection?:
+    | T
+    | {
+        heading?: T;
+        description?: T;
+        endCardTitle?: T;
+        endCardText?: T;
+        ctaHeading?: T;
+        ctaText?: T;
+        ctaButtonLabel?: T;
+        ctaButtonLink?: T;
+      };
   divisions?:
     | T
     | {
@@ -2018,14 +2117,27 @@ export interface LandingPageSelect<T extends boolean = true> {
         items?:
           | T
           | {
-              icon?: T;
               title?: T;
+              icon?: T;
               description?: T;
               image?: T;
               linkLabel?: T;
               linkUrl?: T;
               id?: T;
             };
+      };
+  nav?:
+    | T
+    | {
+        links?:
+          | T
+          | {
+              label?: T;
+              url?: T;
+              id?: T;
+            };
+        ctaLabel?: T;
+        ctaLink?: T;
       };
   footer?:
     | T
@@ -2034,6 +2146,7 @@ export interface LandingPageSelect<T extends boolean = true> {
         socialLinks?:
           | T
           | {
+              label?: T;
               icon?: T;
               url?: T;
               id?: T;
@@ -2052,6 +2165,14 @@ export interface LandingPageSelect<T extends boolean = true> {
               id?: T;
             };
         copyright?: T;
+        credit?: T;
+      };
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
       };
   updatedAt?: T;
   createdAt?: T;
