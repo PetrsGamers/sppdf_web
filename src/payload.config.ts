@@ -41,6 +41,10 @@ const getDeploymentIdentity = (): { source: string; value: string } | null => {
   ]
 
   for (const candidate of candidates) {
+    // Docker images often set HOSTNAME=0.0.0.0, which never changes between deploys.
+    if (candidate.source === 'HOSTNAME' && ['0.0.0.0', 'localhost'].includes(candidate.value || '')) {
+      continue
+    }
     if (candidate.value) {
       return { source: candidate.source, value: candidate.value }
     }
@@ -94,6 +98,7 @@ export default buildConfig({
       connectionString: process.env.DATABASE_URL || '',
     },
     push: false, // Don't auto-push schema changes
+    // Migrations run before every build via `npm run migrate` (package.json "prebuild").
     migrationDir: './migrations',
   }),
   // Order matters: it is the order of groups and items in the admin sidebar.
@@ -151,6 +156,11 @@ export default buildConfig({
     autoRun: [{ cron: '*/5 * * * *', queue: 'default' }],
   },
   onInit: async (payload) => {
+    // `next build` also initialises Payload (static generation); never sync from the build.
+    if (process.env.NEXT_PHASE === 'phase-production-build') return
+    // Set by scripts/migrate.ts.
+    if (process.env.SKIP_DEPLOY_CALENDAR_SYNC === 'true') return
+
     const deploymentIdentity = getDeploymentIdentity()
     if (!deploymentIdentity) {
       payload.logger.warn(
@@ -167,17 +177,13 @@ export default buildConfig({
       const lastDeploymentId = await payload.kv.get<string>(key)
       if (lastDeploymentId === deploymentId) return
 
+      // Queue on the default queue instead of running inline: this doesn't block startup or the
+      // first request, and the autoRun cron (started in src/instrumentation.ts) runs it within
+      // 5 minutes, including the task's retries if Google fails.
       await payload.jobs.queue({
         task: 'syncGoogleCalendar',
         input: {},
-        queue: 'deploy',
-        overrideAccess: true,
-      })
-
-      await payload.jobs.run({
-        queue: 'deploy',
-        limit: 1,
-        sequential: true,
+        queue: 'default',
         overrideAccess: true,
       })
 
