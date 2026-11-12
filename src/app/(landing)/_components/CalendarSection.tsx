@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { Event, LandingPage } from '@/payload-types'
 import { landingDefaults } from '@/LandingPage/defaults'
@@ -8,6 +8,8 @@ import { landingDefaults } from '@/LandingPage/defaults'
 type Props = {
   events: Event[]
   texts?: LandingPage['calendarSection']
+  /** Server render time (ISO). The first client render must match the cached HTML exactly. */
+  renderedAt: string
 }
 
 const D = landingDefaults.calendarSection
@@ -32,14 +34,14 @@ function isEndCard(item: Item): item is { id: 'end-card' } {
   return item.id === 'end-card'
 }
 
-function getInitialPage(events: Event[], pageSize: number): number {
-  const today = new Date()
+function getInitialPage(events: Event[], pageSize: number, now: Date): number {
+  const today = new Date(now)
   today.setHours(0, 0, 0, 0)
   const idx = events.findIndex((e) => new Date(e.date) >= today)
   return idx >= 0 ? Math.floor(idx / pageSize) : 0
 }
 
-export function CalendarSection({ events, texts }: Props) {
+export function CalendarSection({ events, texts, renderedAt }: Props) {
   const heading = texts?.heading ?? D.heading
   const description = texts?.description ?? D.description
   const endCardTitle = texts?.endCardTitle ?? D.endCardTitle
@@ -53,10 +55,18 @@ export function CalendarSection({ events, texts }: Props) {
   const items: Item[] = [...events, { id: 'end-card' }]
   const totalPages = Math.ceil(items.length / pageSize)
 
-  const [page, setPage] = useState(() => getInitialPage(events, pageSize))
+  const [page, setPage] = useState(() => getInitialPage(events, pageSize, new Date(renderedAt)))
   const [activeId, setActiveId] = useState<number | 'end-card' | null>(
-    () => events[getInitialPage(events, pageSize) * pageSize]?.id ?? 'end-card',
+    () => events[getInitialPage(events, pageSize, new Date(renderedAt)) * pageSize]?.id ?? 'end-card',
   )
+
+  // The page may be served from cache rendered on an earlier day: re-pick the start page
+  // with the visitor's clock after hydration.
+  useEffect(() => {
+    const initial = getInitialPage(events, pageSize, new Date())
+    setPage(initial)
+    setActiveId(events[initial * pageSize]?.id ?? 'end-card')
+  }, [events])
 
   const pageItems = items.slice(page * pageSize, page * pageSize + pageSize)
 

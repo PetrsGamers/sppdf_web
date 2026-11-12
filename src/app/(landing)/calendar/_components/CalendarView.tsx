@@ -7,6 +7,8 @@ import { calendarDefaults } from '@/CalendarPage/defaults'
 type Props = {
   events: Event[]
   texts?: CalendarPage['texts']
+  /** Server render time (ISO). The first client render must match the cached HTML exactly. */
+  renderedAt: string
 }
 
 const D = calendarDefaults.texts
@@ -25,17 +27,26 @@ const MONTH_NAMES = [
 
 const DAY_NAMES = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne']
 
-export function CalendarView({ events, texts }: Props) {
+export function CalendarView({ events, texts, renderedAt }: Props) {
   const academicYearLabel = texts?.academicYearLabel ?? D.academicYearLabel
   const registerButtonLabel = texts?.registerButtonLabel ?? D.registerButtonLabel
   const defaultRegistrationUrl = texts?.defaultRegistrationUrl || D.defaultRegistrationUrl
   const selectDayText = texts?.selectDayText ?? D.selectDayText
   const noEventsText = texts?.noEventsText ?? D.noEventsText
 
-  const now = new Date()
+  // Start from the server render time so hydration matches the (possibly cached) HTML,
+  // then switch to the visitor's clock.
+  const [now, setNow] = useState(() => new Date(renderedAt))
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
+
+  useEffect(() => {
+    const clientNow = new Date()
+    setNow(clientNow)
+    setYear(clientNow.getFullYear())
+    setMonth(clientNow.getMonth())
+  }, [])
 
   const prevMonth = () => {
     if (month === 0) {

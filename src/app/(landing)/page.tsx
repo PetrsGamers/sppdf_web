@@ -54,7 +54,11 @@ export default async function LandingPage() {
     <>
       <LandingHero hero={landingPage.hero} />
       <EventRibbon ribbon={landingPage.ribbon} />
-      <CalendarSection events={events} texts={landingPage.calendarSection} />
+      <CalendarSection
+        events={events}
+        texts={landingPage.calendarSection}
+        renderedAt={new Date().toISOString()}
+      />
       <DivisionsSection divisions={landingPage.divisions} />
     </>
   )

@@ -34,5 +34,9 @@ export default async function CalendarPage() {
 
   const calendarPage = await getGlobal('calendar-page')
 
-  return <CalendarView events={eventsData.docs} texts={calendarPage.texts} />
+  return <CalendarView
+      events={eventsData.docs}
+      texts={calendarPage.texts}
+      renderedAt={new Date().toISOString()}
+    />
 }
