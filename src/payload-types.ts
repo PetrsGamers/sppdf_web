@@ -119,6 +119,7 @@ export interface Config {
     'landing-page': LandingPage;
     'about-page': AboutPage;
     'calendar-page': CalendarPage;
+    'site-settings': SiteSetting;
     'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
@@ -127,6 +128,7 @@ export interface Config {
     'landing-page': LandingPageSelect<false> | LandingPageSelect<true>;
     'about-page': AboutPageSelect<false> | AboutPageSelect<true>;
     'calendar-page': CalendarPageSelect<false> | CalendarPageSelect<true>;
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: null;
@@ -2168,6 +2170,48 @@ export interface CalendarPage {
   createdAt?: string | null;
 }
 /**
+ * Společná nastavení celého webu: název a logo, výchozí texty pro Google a sdílení a stránka „nenalezeno“. Horní menu a patičku upravíte v Obsah webu → Hlavní stránka (záložky Menu a Patička).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings".
+ */
+export interface SiteSetting {
+  id: number;
+  /**
+   * Zobrazuje se vedle loga v menu a v patičce a jako název webu při sdílení odkazů.
+   */
+  siteName?: string | null;
+  /**
+   * Malé logo v menu a patičce (ideálně čtvercové SVG nebo PNG s průhledným pozadím). Když necháte prázdné, použije se současné logo SPPDF.
+   */
+  logo?: (number | null) | Media;
+  /**
+   * Čtvercový obrázek (PNG nebo SVG, alespoň 64 × 64 px). Když necháte prázdné, použije se logo SPPDF.
+   */
+  favicon?: (number | null) | Media;
+  seo?: {
+    /**
+     * Titulek v záložce prohlížeče a ve výsledcích Googlu.
+     */
+    defaultTitle?: string | null;
+    /**
+     * Krátké shrnutí webu pro Google a náhled při sdílení (do 160 znaků).
+     */
+    defaultDescription?: string | null;
+    /**
+     * Obrázek v náhledu odkazu na Facebooku, WhatsAppu apod. Ideální rozměr 1200 × 630 px.
+     */
+    ogImage?: (number | null) | Media;
+  };
+  notFound?: {
+    heading?: string | null;
+    text?: string | null;
+    buttonLabel?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-jobs-stats".
  */
@@ -2432,6 +2476,32 @@ export interface CalendarPageSelect<T extends boolean = true> {
         title?: T;
         description?: T;
         image?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  siteName?: T;
+  logo?: T;
+  favicon?: T;
+  seo?:
+    | T
+    | {
+        defaultTitle?: T;
+        defaultDescription?: T;
+        ogImage?: T;
+      };
+  notFound?:
+    | T
+    | {
+        heading?: T;
+        text?: T;
+        buttonLabel?: T;
       };
   updatedAt?: T;
   createdAt?: T;

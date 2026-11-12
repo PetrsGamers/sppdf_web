@@ -5,8 +5,15 @@ import { withCurrentYear } from './highlight'
 
 const D = landingDefaults.footer
 
+export type Brand = {
+  name: string
+  logoUrl: string
+  logoAlt: string
+}
+
 type Props = {
   footer: LandingPage['footer']
+  brand: Brand
 }
 
 type SocialLink = { id?: string | null; icon: string; label?: string | null; url: string }
@@ -16,7 +23,7 @@ type LinkColumn = {
   links?: { id?: string | null; label: string; url: string }[] | null
 }
 
-export function LandingFooter({ footer }: Props) {
+export function LandingFooter({ footer, brand }: Props) {
   const description = footer?.description ?? D.description
   const socialLinks: SocialLink[] =
     footer?.socialLinks && footer.socialLinks.length > 0
@@ -37,8 +44,8 @@ export function LandingFooter({ footer }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-12 max-w-7xl mx-auto px-8 py-16">
         <div className="col-span-1 md:col-span-2 space-y-6">
           <div className="flex items-center gap-2">
-            <img alt="Logo SPPDF" className="h-8 w-8 object-contain" src="/logo-sppdf.svg" />
-            <span className="text-xl font-bold text-stone-900">SPPDF</span>
+            <img alt={brand.logoAlt} className="h-8 w-8 object-contain" src={brand.logoUrl} />
+            {brand.name && <span className="text-xl font-bold text-stone-900">{brand.name}</span>}
           </div>
           {description && (
             <p className="text-stone-500 text-sm leading-relaxed max-w-sm">{description}</p>

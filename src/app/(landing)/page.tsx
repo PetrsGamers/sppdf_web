@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 
@@ -5,6 +6,13 @@ import { LandingHero } from './_components/LandingHero'
 import { EventRibbon } from './_components/EventRibbon'
 import { CalendarSection } from './_components/CalendarSection'
 import { DivisionsSection } from './_components/DivisionsSection'
+import { getGlobal } from './_lib/getGlobal'
+import { buildPageMetadata } from './_lib/metadata'
+
+export async function generateMetadata(): Promise<Metadata> {
+  const landingPage = await getGlobal('landing-page')
+  return buildPageMetadata(landingPage.seo, '/')
+}
 
 export default async function LandingPage() {
   const payload = await getPayload({ config: configPromise })

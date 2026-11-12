@@ -5,11 +5,14 @@ import Link from 'next/link'
 import type { LandingPage } from '@/payload-types'
 import { landingDefaults as D } from '@/LandingPage/defaults'
 
+import type { Brand } from './LandingFooter'
+
 type Props = {
   nav: LandingPage['nav']
+  brand: Brand
 }
 
-export function LandingNav({ nav }: Props) {
+export function LandingNav({ nav, brand }: Props) {
   const pathname = usePathname()
   const links: { id?: string | null; label: string; url: string }[] =
     nav?.links && nav.links.length > 0 ? nav.links : [...D.nav.links]
@@ -20,14 +23,12 @@ export function LandingNav({ nav }: Props) {
     <nav className="bg-white/90 backdrop-blur-xl fixed top-0 w-full z-50 shadow-sm border-b border-stone-100">
       <div className="flex justify-between items-center max-w-7xl mx-auto px-6 h-20">
         <div className="flex items-center gap-3">
-          <img
-            alt="Logo SPPDF"
-            className="h-10 w-10 object-contain"
-            src="/logo-sppdf.svg"
-          />
-          <span className="text-2xl font-black text-stone-900 tracking-tighter font-headline">
-            SPPDF
-          </span>
+          <img alt={brand.logoAlt} className="h-10 w-10 object-contain" src={brand.logoUrl} />
+          {brand.name && (
+            <span className="text-2xl font-black text-stone-900 tracking-tighter font-headline">
+              {brand.name}
+            </span>
+          )}
         </div>
         <div className="hidden md:flex items-center space-x-8">
           {links.map((link, i) => {

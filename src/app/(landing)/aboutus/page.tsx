@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
@@ -6,6 +7,12 @@ import { aboutDefaults as D } from '@/AboutPage/defaults'
 
 import { renderHighlighted } from '../_components/highlight'
 import { getGlobal } from '../_lib/getGlobal'
+import { buildPageMetadata } from '../_lib/metadata'
+
+export async function generateMetadata(): Promise<Metadata> {
+  const about = await getGlobal('about-page')
+  return buildPageMetadata(about.seo, '/aboutus')
+}
 
 /** Internal links use next/link, anything else (external, #, mailto:) a plain <a>. */
 function SmartLink({
