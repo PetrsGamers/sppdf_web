@@ -16,7 +16,7 @@ export const validateLinkUrl: TextFieldSingleValidation = (value, options) => {
 
   const trimmed = value.trim()
   if (!ALLOWED_PREFIXES.some((prefix) => trimmed.startsWith(prefix))) {
-    return 'Odkaz musí začínat lomítkem (/stranka), https://, mailto: nebo tel:.'
+    return 'Odkaz musí začínat lomítkem (/stranka), https://, mailto:, tel: nebo # (= nikam).'
   }
   if (/\s/.test(trimmed)) {
     return 'Odkaz nesmí obsahovat mezery.'
