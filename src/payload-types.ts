@@ -117,12 +117,14 @@ export interface Config {
     header: Header;
     footer: Footer;
     'landing-page': LandingPage;
+    'about-page': AboutPage;
     'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
     'landing-page': LandingPageSelect<false> | LandingPageSelect<true>;
+    'about-page': AboutPageSelect<false> | AboutPageSelect<true>;
     'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: null;
@@ -831,6 +833,8 @@ export interface Event {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Lidé zobrazení v bloku „Náš tým“ na stránce O nás. Řadí se podle pole Pořadí (od nejmenšího čísla). Když nebude zadaný nikdo, blok s týmem se skryje.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "team-members".
  */
@@ -838,12 +842,15 @@ export interface TeamMember {
   id: number;
   name: string;
   /**
-   * e.g. "Předseda", "Místopředsedkyně"
+   * Např. „Předseda“, „Místopředsedkyně“, „PR koordinátorka“.
    */
   role: string;
+  /**
+   * Portrét, ideálně čtvercový (zobrazí se ve výřezu kruhu). Bez fotky se ukáže ikonka postavy.
+   */
   photo?: (number | null) | Media;
   /**
-   * Display order (lower numbers first)
+   * Menší číslo = víc vlevo / dřív. Např. předseda 1, místopředseda 2… Lidé se stejným číslem se řadí libovolně.
    */
   order?: number | null;
   updatedAt: string;
@@ -1999,6 +2006,109 @@ export interface LandingPage {
   createdAt?: string | null;
 }
 /**
+ * Texty stránky O nás (/aboutus). Jednotlivé členy týmu přidáváte v sekci Obsah webu → Členové týmu. Změny se na webu projeví hned po uložení.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "about-page".
+ */
+export interface AboutPage {
+  id: number;
+  intro?: {
+    /**
+     * Prázdné = štítek se nezobrazí.
+     */
+    badge?: string | null;
+    /**
+     * Slova ve dvojitých složených závorkách se zvýrazní barvou spolku, např. „Náš {{tým}}“.
+     */
+    headline?: string | null;
+    text?: string | null;
+    /**
+     * Odkaz, který posune stránku dolů na část Historie. Prázdné = odkaz se nezobrazí.
+     */
+    storyLinkLabel?: string | null;
+  };
+  features?: {
+    /**
+     * Pořadí změníte přetažením. Nejlépe vypadají 3 karty (nebo násobky 3). Bez karet se blok skryje.
+     */
+    items?:
+      | {
+          title: string;
+          /**
+           * Anglický název ikony ze sady Material Symbols, malými písmeny a s podtržítky (např. groups, celebration, school, photo_camera, mail). Všechny ikony najdete na https://fonts.google.com/icons – klikněte na ikonu a zkopírujte její název.
+           */
+          icon: string;
+          description?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  history?: {
+    /**
+     * Slova ve dvojitých složených závorkách se zvýrazní barvou spolku, např. „Náš {{tým}}“.
+     */
+    heading?: string | null;
+    /**
+     * Zobrazují se v tomto pořadí shora dolů (pořadí změníte přetažením). Bez milníků se blok skryje.
+     */
+    items?:
+      | {
+          /**
+           * Např. 2010 nebo „Dnes“.
+           */
+          year: string;
+          title: string;
+          description?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  team?: {
+    /**
+     * Slova ve dvojitých složených závorkách se zvýrazní barvou spolku, např. „Náš {{tým}}“.
+     */
+    heading?: string | null;
+    description?: string | null;
+  };
+  cta?: {
+    heading?: string | null;
+    text?: string | null;
+    /**
+     * Prázdné = tlačítko se nezobrazí.
+     */
+    primaryLabel?: string | null;
+    /**
+     * Např. odkaz na přihlášku. Hodnota # znamená, že tlačítko nikam nevede. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+     */
+    primaryLink?: string | null;
+    /**
+     * Prázdné = tlačítko se nezobrazí.
+     */
+    secondaryLabel?: string | null;
+    /**
+     * Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+     */
+    secondaryLink?: string | null;
+  };
+  seo?: {
+    /**
+     * Zobrazuje se v záložce prohlížeče, ve výsledcích Googlu a při sdílení odkazu. Ideálně do 60 znaků. Když necháte prázdné, použije se výchozí titulek z Nastavení webu.
+     */
+    title?: string | null;
+    /**
+     * Krátké shrnutí stránky (1–2 věty, ideálně do 160 znaků) pro Google a náhled při sdílení na sociálních sítích. Když necháte prázdné, použije se výchozí popis z Nastavení webu.
+     */
+    description?: string | null;
+    /**
+     * Obrázek, který se ukáže při sdílení odkazu (Facebook, WhatsApp, Messenger…). Ideální rozměr 1200 × 630 px. Když necháte prázdné, použije se výchozí obrázek z Nastavení webu.
+     */
+    image?: (number | null) | Media;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-jobs-stats".
  */
@@ -2166,6 +2276,71 @@ export interface LandingPageSelect<T extends boolean = true> {
             };
         copyright?: T;
         credit?: T;
+      };
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "about-page_select".
+ */
+export interface AboutPageSelect<T extends boolean = true> {
+  intro?:
+    | T
+    | {
+        badge?: T;
+        headline?: T;
+        text?: T;
+        storyLinkLabel?: T;
+      };
+  features?:
+    | T
+    | {
+        items?:
+          | T
+          | {
+              title?: T;
+              icon?: T;
+              description?: T;
+              id?: T;
+            };
+      };
+  history?:
+    | T
+    | {
+        heading?: T;
+        items?:
+          | T
+          | {
+              year?: T;
+              title?: T;
+              description?: T;
+              id?: T;
+            };
+      };
+  team?:
+    | T
+    | {
+        heading?: T;
+        description?: T;
+      };
+  cta?:
+    | T
+    | {
+        heading?: T;
+        text?: T;
+        primaryLabel?: T;
+        primaryLink?: T;
+        secondaryLabel?: T;
+        secondaryLink?: T;
       };
   seo?:
     | T
