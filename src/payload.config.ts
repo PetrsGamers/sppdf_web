@@ -129,7 +129,8 @@ export default buildConfig({
           attempts: 2,
           backoff: { type: 'exponential', delay: 60000 },
         },
-        schedule: [{ cron: '0 6 * * *', queue: 'default' }],
+        // Hourly; the autoRun below (every 5 min) picks up the queued job.
+        schedule: [{ cron: '0 * * * *', queue: 'default' }],
       },
     ],
     deleteJobOnComplete: true,
