@@ -1,303 +1,269 @@
-# Payload Website Template
+# SPPDF web
 
-This is the official [Payload Website Template](https://github.com/payloadcms/payload/blob/main/templates/website). Use it to power websites, blogs, or portfolios from small to enterprise. This repo includes a fully-working backend, enterprise-grade admin panel, and a beautifully designed, production-ready website.
+> Webové stránky Spolku přátel pedagogické fakulty (SPPDF) při Pedagogické fakultě Masarykovy univerzity.
 
-This template is right for you if you are working on:
+Website of SPPDF (Spolek přátel pedagogické fakulty), an association of students and teachers at the Faculty of Education, Masaryk University.
 
-- A personal or enterprise-grade website, blog, or portfolio
-- A content publishing platform with a fully featured publication workflow
-- Exploring the capabilities of Payload
+- Live site: https://sppdfmuni.petrhybl.com
+- Admin panel: https://sppdfmuni.petrhybl.com/admin
+- Hosting: [Coolify](https://coolify.io)
 
-Core features:
+The project is a fork of the [Payload "website" template](https://github.com/payloadcms/payload/tree/main/templates/website). The public site is a custom set of Czech landing pages (`/`, `/aboutus`, `/calendar`) edited through Payload. Events are pulled automatically from the association's public Google Calendar. Most of the template's blog/pages machinery is still in the codebase but is not part of the real site (see [Project structure](#project-structure)).
 
-- [Pre-configured Payload Config](#how-it-works)
-- [Authentication](#users-authentication)
-- [Access Control](#access-control)
-- [Layout Builder](#layout-builder)
-- [Draft Preview](#draft-preview)
-- [Live Preview](#live-preview)
-- [On-demand Revalidation](#on-demand-revalidation)
-- [SEO](#seo)
-- [Search](#search)
-- [Redirects](#redirects)
-- [Jobs and Scheduled Publishing](#jobs-and-scheduled-publish)
-- [Website](#website)
+## Tech stack
 
-## Quick Start
+| Area | Technology |
+| --- | --- |
+| CMS | [Payload](https://payloadcms.com) 3.79.1 (admin panel, REST/GraphQL API, jobs queue) |
+| Framework | Next.js 15.4 (App Router), React 19 |
+| Database | PostgreSQL via `@payloadcms/db-postgres` |
+| Styling | Tailwind CSS 4 |
+| Rich text | Lexical (`@payloadcms/richtext-lexical`) |
+| Calendar sync | Google Calendar API v3 (`googleapis`) |
+| Tests | Vitest (integration), Playwright (e2e) |
 
-To spin up this example locally, follow these steps:
+## Project structure
 
-### Clone
-
-If you have not done so already, you need to have standalone copy of this repo on your machine. If you've already cloned this repo, skip to [Development](#development).
-
-Use the `create-payload-app` CLI to clone this template directly to your machine:
-
-```bash
-pnpx create-payload-app my-project -t website
+```
+src/
+├── app/
+│   ├── (landing)/              # THE PUBLIC SITE
+│   │   ├── layout.tsx          # nav + footer, reads the LandingPage global
+│   │   ├── page.tsx            # /          hero, ribbon, event carousel, divisions
+│   │   ├── aboutus/page.tsx    # /aboutus   team (TeamMembers collection)
+│   │   ├── calendar/           # /calendar  month calendar (Events collection)
+│   │   ├── _components/        # LandingHero, LandingNav, CalendarSection, ...
+│   │   └── landing.css
+│   ├── (payload)/              # Payload admin (/admin) and API (/api/*)
+│   └── (frontend)/             # template leftovers: /[slug], /posts, /search, sitemaps, preview, seed
+├── LandingPage/                # LandingPage global (config + revalidation hook)
+├── collections/
+│   ├── Events/                 # events shown on / and /calendar
+│   ├── TeamMembers/            # people shown on /aboutus
+│   ├── Media.ts                # uploads, stored in public/media
+│   ├── Users/                  # admin accounts
+│   └── Pages/, Posts/, Categories.ts   # template leftovers
+├── jobs/
+│   └── syncGoogleCalendar.ts   # Google Calendar -> Events task
+├── payload.config.ts           # DB adapter, collections/globals, jobs, onInit deploy sync
+├── payload-types.ts            # generated (npm run generate:types)
+└── Header/, Footer/, blocks/, heros/, search/, plugins/, ...   # template code
 ```
 
-### Development
+What is actually used by the live site:
 
-1. First [clone the repo](#clone) if you have not done so already
-1. `cd my-project && cp .env.example .env` to copy the example environment variables
-1. `pnpm install && pnpm dev` to install dependencies and start the dev server
-1. open `http://localhost:3000` to open the app in your browser
+- **`src/app/(landing)`**: all public pages.
+- **Globals**: `LandingPage` (`src/LandingPage/config.ts`).
+- **Collections**: `Events`, `TeamMembers`, `Media`, `Users`.
+- **Jobs**: `syncGoogleCalendar` (`src/jobs/syncGoogleCalendar.ts`, registered in `src/payload.config.ts`).
 
-That's it! Changes made in `./src` will be reflected in your app. Follow the on-screen instructions to login and create your first admin user. Then check out [Production](#production) once you're ready to build and serve your app, and [Deployment](#deployment) when you're ready to go live.
+Still in the codebase from the template, but not part of the SPPDF site:
 
-## How it works
+- the `(frontend)` routes: `/[slug]`, `/posts`, `/search`, `/next/preview`, `/next/seed`, `pages-sitemap.xml`, `posts-sitemap.xml`;
+- the `Pages`, `Posts` and `Categories` collections and the `Header` and `Footer` globals;
+- the form-builder, search, SEO, redirects and nested-docs plugins (`src/plugins/index.ts`);
+- the "Seed your database" button on the admin dashboard (`src/components/BeforeDashboard`). **Do not press it on a real database.** It deletes all pages, posts, media, categories, forms and search records, and it creates a `demo-author@example.com` user whose password is `password`.
 
-The Payload config is tailored specifically to the needs of most websites. It is pre-configured in the following ways:
+`AGENTS.md` contains general Payload coding guidelines for AI assistants. Its "Project Structure" section is generic and does not describe this repo.
 
-### Collections
+## Local development
 
-See the [Collections](https://payloadcms.com/docs/configuration/collections) docs for details on how to extend this functionality.
+### Prerequisites
 
-- #### Users (Authentication)
+- **Node.js 22.** The production Dockerfile uses `node:22.17.0-alpine`. `package.json` `engines` allows `^18.20.2 || >=20.9.0`.
+- **npm.** The committed lockfile is `package-lock.json`, so use `npm ci` / `npm install`. A few `package.json` scripts and the Playwright config still call `pnpm` (see [Scripts](#scripts)). `.npmrc` sets `legacy-peer-deps=true`.
+- **PostgreSQL**, local or in Docker. For example:
+  ```bash
+  docker run -d --name sppdf-db -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=sppdf -p 5432:5432 postgres:16
+  ```
+  `docker-compose.yml` in the repo is the stale template file (MongoDB, Node 18, yarn). Don't use it.
 
-  Users are auth-enabled collections that have access to the admin panel and unpublished content. See [Access Control](#access-control) for more details.
-
-  For additional help, see the official [Auth Example](https://github.com/payloadcms/payload/tree/main/examples/auth) or the [Authentication](https://payloadcms.com/docs/authentication/overview#authentication-overview) docs.
-
-- #### Posts
-
-  Posts are used to generate blog posts, news articles, or any other type of content that is published over time. All posts are layout builder enabled so you can generate unique layouts for each post using layout-building blocks, see [Layout Builder](#layout-builder) for more details. Posts are also draft-enabled so you can preview them before publishing them to your website, see [Draft Preview](#draft-preview) for more details.
-
-- #### Pages
-
-  All pages are layout builder enabled so you can generate unique layouts for each page using layout-building blocks, see [Layout Builder](#layout-builder) for more details. Pages are also draft-enabled so you can preview them before publishing them to your website, see [Draft Preview](#draft-preview) for more details.
-
-- #### Media
-
-  This is the uploads enabled collection used by pages, posts, and projects to contain media like images, videos, downloads, and other assets. It features pre-configured sizes, focal point and manual resizing to help you manage your pictures.
-
-- #### Categories
-
-  A taxonomy used to group posts together. Categories can be nested inside of one another, for example "News > Technology". See the official [Payload Nested Docs Plugin](https://payloadcms.com/docs/plugins/nested-docs) for more details.
-
-### Globals
-
-See the [Globals](https://payloadcms.com/docs/configuration/globals) docs for details on how to extend this functionality.
-
-- `Header`
-
-  The data required by the header on your front-end like nav links.
-
-- `Footer`
-
-  Same as above but for the footer of your site.
-
-## Access control
-
-Basic access control is setup to limit access to various content based based on publishing status.
-
-- `users`: Users can access the admin panel and create or edit content.
-- `posts`: Everyone can access published posts, but only users can create, update, or delete them.
-- `pages`: Everyone can access published pages, but only users can create, update, or delete them.
-
-For more details on how to extend this functionality, see the [Payload Access Control](https://payloadcms.com/docs/access-control/overview#access-control) docs.
-
-## Layout Builder
-
-Create unique page layouts for any type of content using a powerful layout builder. This template comes pre-configured with the following layout building blocks:
-
-- Hero
-- Content
-- Media
-- Call To Action
-- Archive
-
-Each block is fully designed and built into the front-end website that comes with this template. See [Website](#website) for more details.
-
-## Lexical editor
-
-A deep editorial experience that allows complete freedom to focus just on writing content without breaking out of the flow with support for Payload blocks, media, links and other features provided out of the box. See [Lexical](https://payloadcms.com/docs/rich-text/overview) docs.
-
-## Draft Preview
-
-All posts and pages are draft-enabled so you can preview them before publishing them to your website. To do this, these collections use [Versions](https://payloadcms.com/docs/configuration/collections#versions) with `drafts` set to `true`. This means that when you create a new post, project, or page, it will be saved as a draft and will not be visible on your website until you publish it. This also means that you can preview your draft before publishing it to your website. To do this, we automatically format a custom URL which redirects to your front-end to securely fetch the draft version of your content.
-
-Since the front-end of this template is statically generated, this also means that pages, posts, and projects will need to be regenerated as changes are made to published documents. To do this, we use an `afterChange` hook to regenerate the front-end when a document has changed and its `_status` is `published`.
-
-For more details on how to extend this functionality, see the official [Draft Preview Example](https://github.com/payloadcms/payload/tree/examples/draft-preview).
-
-## Live preview
-
-In addition to draft previews you can also enable live preview to view your end resulting page as you're editing content with full support for SSR rendering. See [Live preview docs](https://payloadcms.com/docs/live-preview/overview) for more details.
-
-## On-demand Revalidation
-
-We've added hooks to collections and globals so that all of your pages, posts, footer, or header changes will automatically be updated in the frontend via on-demand revalidation supported by Nextjs.
-
-> Note: if an image has been changed, for example it's been cropped, you will need to republish the page it's used on in order to be able to revalidate the Nextjs image cache.
-
-## SEO
-
-This template comes pre-configured with the official [Payload SEO Plugin](https://payloadcms.com/docs/plugins/seo) for complete SEO control from the admin panel. All SEO data is fully integrated into the front-end website that comes with this template. See [Website](#website) for more details.
-
-## Search
-
-This template also pre-configured with the official [Payload Search Plugin](https://payloadcms.com/docs/plugins/search) to showcase how SSR search features can easily be implemented into Next.js with Payload. See [Website](#website) for more details.
-
-## Redirects
-
-If you are migrating an existing site or moving content to a new URL, you can use the `redirects` collection to create a proper redirect from old URLs to new ones. This will ensure that proper request status codes are returned to search engines and that your users are not left with a broken link. This template comes pre-configured with the official [Payload Redirects Plugin](https://payloadcms.com/docs/plugins/redirects) for complete redirect control from the admin panel. All redirects are fully integrated into the front-end website that comes with this template. See [Website](#website) for more details.
-
-## Jobs and Scheduled Publish
-
-We have configured [Scheduled Publish](https://payloadcms.com/docs/versions/drafts#scheduled-publish) which uses the [jobs queue](https://payloadcms.com/docs/jobs-queue/jobs) in order to publish or unpublish your content on a scheduled time. The tasks are run on a cron schedule and can also be run as a separate instance if needed.
-
-> Note: When deployed on Vercel, depending on the plan tier, you may be limited to daily cron only.
-
-## Website
-
-This template includes a beautifully designed, production-ready front-end built with the [Next.js App Router](https://nextjs.org), served right alongside your Payload app in a instance. This makes it so that you can deploy both your backend and website where you need it.
-
-Core features:
-
-- [Next.js App Router](https://nextjs.org)
-- [TypeScript](https://www.typescriptlang.org)
-- [React Hook Form](https://react-hook-form.com)
-- [Payload Admin Bar](https://github.com/payloadcms/payload/tree/main/packages/admin-bar)
-- [TailwindCSS styling](https://tailwindcss.com/)
-- [shadcn/ui components](https://ui.shadcn.com/)
-- User Accounts and Authentication
-- Fully featured blog
-- Publication workflow
-- Dark mode
-- Pre-made layout building blocks
-- SEO
-- Search
-- Redirects
-- Live preview
-
-### Cache
-
-Although Next.js includes a robust set of caching strategies out of the box, Payload Cloud proxies and caches all files through Cloudflare using the [Official Cloud Plugin](https://www.npmjs.com/package/@payloadcms/payload-cloud). This means that Next.js caching is not needed and is disabled by default. If you are hosting your app outside of Payload Cloud, you can easily reenable the Next.js caching mechanisms by removing the `no-store` directive from all fetch requests in `./src/app/_api` and then removing all instances of `export const dynamic = 'force-dynamic'` from pages files, such as `./src/app/(pages)/[slug]/page.tsx`. For more details, see the official [Next.js Caching Docs](https://nextjs.org/docs/app/building-your-application/caching).
-
-## Development
-
-To spin up this example locally, follow the [Quick Start](#quick-start). Then [Seed](#seed) the database with a few pages, posts, and projects.
-
-### Working with Postgres
-
-Postgres and other SQL-based databases follow a strict schema for managing your data. In comparison to our MongoDB adapter, this means that there's a few extra steps to working with Postgres.
-
-Note that often times when making big schema changes you can run the risk of losing data if you're not manually migrating it.
-
-#### Local development
-
-Ideally we recommend running a local copy of your database so that schema updates are as fast as possible. By default the Postgres adapter has `push: true` for development environments. This will let you add, modify and remove fields and collections without needing to run any data migrations.
-
-If your database is pointed to production you will want to set `push: false` otherwise you will risk losing data or having your migrations out of sync.
-
-#### Migrations
-
-[Migrations](https://payloadcms.com/docs/database/migrations) are essentially SQL code versions that keeps track of your schema. When deploy with Postgres you will need to make sure you create and then run your migrations.
-
-Locally create a migration
+### First run
 
 ```bash
-pnpm payload migrate:create
+npm ci
+cp .env.example .env          # then fill in the values (see below)
+npm run payload migrate:create initial   # first time only, see "Database & migrations"
+npm run payload migrate       # create the tables
+npm run dev                   # http://localhost:3000
 ```
 
-This creates the migration files you will need to push alongside with your new configuration.
+Open http://localhost:3000/admin and create the first admin user. The landing pages render with built-in fallback content until you fill in the **Landing Page** global and add events and team members.
 
-On the server after building and before running `pnpm start` you will want to run your migrations
+Schema push is disabled (`push: false`), so `npm run dev` does **not** create tables. If you skip the migrate step, every page fails with `relation "..." does not exist`.
 
-```bash
-pnpm payload migrate
-```
+### Environment variables
 
-This command will check for any migrations that have not yet been run and try to run them and it will keep a record of migrations that have been run in the database.
+| Variable | Required | When | Purpose |
+| --- | --- | --- | --- |
+| `DATABASE_URL` | yes | build + runtime | Postgres connection string. The build needs it as well, because `next build` prerenders the landing pages from the database. |
+| `PAYLOAD_SECRET` | yes | build + runtime | Payload's secret for signing auth tokens. Use a long random string. Changing it logs everyone out. |
+| `NEXT_PUBLIC_SERVER_URL` | yes (prod) | **build** + runtime | Public base URL with no trailing slash, e.g. `https://sppdfmuni.petrhybl.com`. Used for CORS, absolute URLs (SEO/OG, media) and `robots.txt`/`sitemap.xml`, which `next-sitemap` generates in `postbuild`. `NEXT_PUBLIC_*` values are inlined at build time. Server code falls back to `http://localhost:3000` and the sitemap to `https://example.com`. |
+| `GOOGLE_API_KEY` | yes, for calendar sync | runtime | Google API key with the Google Calendar API enabled. Without it every sync run throws. The rest of the site works without it. |
+| `CRON_SECRET` | optional | runtime | Lets external callers run the jobs endpoint with `Authorization: Bearer <CRON_SECRET>`. If unset, only logged-in admin users can call `/api/payload-jobs/run`. In-process scheduling does not need it. |
+| `PREVIEW_SECRET` | optional | runtime | Shared secret for the template's draft preview route (`/next/preview`), which only the `Pages`/`Posts` collections use. |
+| `DEPLOYMENT_ID` | optional | runtime | Overrides the deployment identity used for the [once-per-deployment calendar sync](#once-per-deployment-sync). Change it to force a sync on the next boot. |
+| `SOURCE_COMMIT`, `COOLIFY_CONTAINER_NAME`, `HOSTNAME` | set by platform | runtime | Fallback deployment identities, in that order after `DEPLOYMENT_ID`. Don't set these by hand. |
+| `VERCEL_PROJECT_PRODUCTION_URL`, `VERCEL_GIT_COMMIT_SHA`, `RAILWAY_GIT_COMMIT_SHA`, `RENDER_GIT_COMMIT`, `HEROKU_RELEASE_VERSION` | n/a | — | Template and other-platform fallbacks read by the code. Not used on Coolify. |
+| `CI` | optional | tests | Playwright: retries, a single worker, and `forbidOnly`. |
 
-### Docker
+## Database & migrations
 
-Alternatively, you can use [Docker](https://www.docker.com) to spin up this template locally. To do so, follow these steps:
-
-1. Follow [steps 1 and 2 from above](#development), the docker-compose file will automatically use the `.env` file in your project root
-1. Next run `docker-compose up`
-1. Follow [steps 4 and 5 from above](#development) to login and create your first admin user
-
-That's it! The Docker instance will help you get up and running quickly while also standardizing the development environment across your teams.
-
-### Seed
-
-To seed the database with a few pages, posts, and projects you can click the 'seed database' link from the admin panel.
-
-The seed script will also create a demo user for demonstration purposes only:
-
-- Demo Author
-  - Email: `demo-author@payloadcms.com`
-  - Password: `password`
-
-> NOTICE: seeding the database is destructive because it drops your current database to populate a fresh one from the seed template. Only run this command if you are starting a new project or can afford to lose your current data.
-
-## Production
-
-To run Payload in production, you need to build and start the Admin panel. To do so, follow these steps:
-
-1. Invoke the `next build` script by running `pnpm build` or `npm run build` in your project root. This creates a `.next` directory with a production-ready admin bundle.
-1. Finally run `pnpm start` or `npm run start` to run Node in production and serve Payload from the `.build` directory.
-1. When you're ready to go live, see Deployment below for more details.
-
-### Deploying to Vercel
-
-This template can also be deployed to Vercel for free. You can get started by choosing the Vercel DB adapter during the setup of the template or by manually installing and configuring it:
-
-```bash
-pnpm add @payloadcms/db-vercel-postgres
-```
+The Postgres adapter in `src/payload.config.ts` is configured with:
 
 ```ts
-// payload.config.ts
-import { vercelPostgresAdapter } from '@payloadcms/db-vercel-postgres'
-
-export default buildConfig({
-  // ...
-  db: vercelPostgresAdapter({
-    pool: {
-      connectionString: process.env.POSTGRES_URL || '',
-    },
-  }),
-  // ...
+postgresAdapter({
+  pool: { connectionString: process.env.DATABASE_URL },
+  push: false,                 // never auto-sync the schema
+  migrationDir: './migrations',
+})
 ```
 
-We also support Vercel's blob storage:
+**No migrations are committed yet.** There is no `migrations/` directory. The production schema was created outside of migrations. Until a baseline migration exists, a fresh database (new developer, staging, restore) has no tables, and nothing in the repo records the production schema.
 
-```bash
-pnpm add @payloadcms/storage-vercel-blob
-```
+Any change to collections, globals or fields (including adding or removing a field) changes the DB schema. Handle it like this:
 
-```ts
-// payload.config.ts
-import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
+1. Change the config in `src/`.
+2. `npm run generate:types` to refresh `src/payload-types.ts`.
+3. `npm run payload migrate:create <short-name>`. This writes `migrations/<timestamp>_<name>.ts` and a `.json` schema snapshot, and updates `migrations/index.ts`. Review the generated SQL.
+4. `npm run payload migrate` to apply it locally. Use `npm run payload migrate:status` to check.
+5. Commit the migration files together with the config change.
+6. Apply the migration to production **before** the new code serves traffic. The build itself queries the DB, so the safest place is the build step (see [Deployment](#deployment-coolify)).
 
-export default buildConfig({
-  // ...
-  plugins: [
-    vercelBlobStorage({
-      collections: {
-        [Media.slug]: true,
-      },
-      token: process.env.BLOB_READ_WRITE_TOKEN || '',
-    }),
-  ],
-  // ...
-```
+**Creating the baseline (one-time).** The first `migrate:create` on a repo with no migrations generates the complete schema. Generate it from the code that is currently deployed. Before you run it against production, check `npm run payload migrate:status` with the production `DATABASE_URL`. Production already has these tables, so the baseline must be **recorded as applied** rather than executed there. One way is to insert its name into the `payload_migrations` table (`name`, `batch = 1`). If Payload reports an earlier dev-mode push (a `batch = -1` row), resolve that first.
 
-There is also a simplified [one click deploy](https://github.com/payloadcms/payload/tree/templates/with-vercel-postgres) to Vercel should you need it.
+Useful commands: `migrate`, `migrate:status`, `migrate:create`, `migrate:down`, `migrate:fresh` (drops everything, local only). Run them all via `npm run payload <command>`.
 
-### Self-hosting
+## Editing content
 
-Before deploying your app, you need to:
+Log in at `/admin`. Every logged-in user has full rights; there are no roles. No email adapter is configured, so emails such as password resets are only written to the server log.
 
-1. Ensure your app builds and serves in production. See [Production](#production) for more details.
-2. You can then deploy Payload as you would any other Node.js or Next.js application either directly on a VPS, DigitalOcean's Apps Platform, via Coolify or more. More guides coming soon.
+| Part of the site | Where to edit |
+| --- | --- |
+| Nav links and CTA button (all landing pages) | Globals → **Landing Page** → Navigation |
+| Hero (badge, headline, subtitle, two CTAs, image) | Landing Page → Hero Section |
+| Scrolling ribbon under the hero | Landing Page → Event Ribbon |
+| "Divisions" carousel on `/` | Landing Page → Divisions Section |
+| Footer (text, social links, link columns, copyright) | Landing Page → Footer |
+| Event carousel on `/` and the `/calendar` page | Collections → **Events** (published only) |
+| Team on `/aboutus` | Collections → **Team Members** (sorted by `order`, max. 20) |
+| Images | Collections → **Media** (or upload directly from an upload field) |
 
-You can also deploy your app manually, check out the [deployment documentation](https://payloadcms.com/docs/production/deployment) for full details.
+Notes:
 
-## Questions
+- Events have drafts, autosave and scheduled publishing. Only **published** events are shown.
+- Events created by the calendar sync have a read-only `googleCalendarEventId`. The next sync overwrites their title, date, time, location and description and publishes them again. Edit them in Google Calendar instead.
+- The `/aboutus` history section and some texts and links are hardcoded in `src/app/(landing)`, not in the CMS.
+- `/` and `/calendar` re-render at most every 5 minutes; saving an event in the admin refreshes them immediately. See [Troubleshooting](#troubleshooting).
 
-If you have any issues or questions, reach out to us on [Discord](https://discord.com/invite/payload) or start a [GitHub discussion](https://github.com/payloadcms/payload/discussions).
+## Google Calendar sync
+
+`src/jobs/syncGoogleCalendar.ts` registers the Payload task `syncGoogleCalendar`, which works like this:
+
+1. It reads all upcoming events (`timeMin = now`, recurring events expanded, all result pages) from the calendar `sppdfmuni@gmail.com`. The calendar ID is hardcoded. Authentication uses `GOOGLE_API_KEY` only, so **the calendar must be public** ("Make available to public → See all event details").
+2. It skips events whose description contains `internal` (case-insensitive).
+3. It matches existing CMS events by `googleCalendarEventId`, updates them or creates new ones, and always sets them to **published**. The slug is the title plus the Google event ID, so recurring events with the same title don't collide. A failure on one event is logged and the sync continues.
+4. Upcoming synced events that no longer appear in Google (deleted or cancelled) are **unpublished**, not deleted. Past events are left as they are.
+5. It stores the start time as `HH:MM` in `Europe/Prague`. A duration string is computed from the end time.
+6. It writes with revalidation disabled, because `revalidatePath()` throws outside a request (the job runs from the `autoRun` cron). `/` and `/calendar` instead use time-based revalidation (`export const revalidate = 300`), so synced events appear within about 5 minutes.
+
+### Schedule
+
+These settings live in `jobs` in `src/payload.config.ts`:
+
+- `schedule: [{ cron: '0 * * * *', queue: 'default' }]` queues a sync every hour.
+- `autoRun: [{ cron: '*/5 * * * *', queue: 'default' }]`: the running Next.js server checks the `default` queue every 5 minutes, queues scheduled jobs and runs them. This needs a long-running Node process, which Coolify provides. No external cron is needed.
+- Failed runs retry 2× with exponential backoff (60 s). Completed jobs are deleted (`deleteJobOnComplete`).
+
+### Once-per-deployment sync
+
+`onInit` in `src/payload.config.ts` runs one sync when the app boots with a deployment identity it has not seen before. The identity is the first non-empty value of `DEPLOYMENT_ID`, `SOURCE_COMMIT`, `VERCEL_GIT_COMMIT_SHA`, `RAILWAY_GIT_COMMIT_SHA`, `RENDER_GIT_COMMIT`, `HEROKU_RELEASE_VERSION`, `COOLIFY_CONTAINER_NAME` or `HOSTNAME`. The last identity that was synced is stored in Payload's KV store under `jobs:syncGoogleCalendar:lastDeployment`, and the sync runs immediately on a separate `deploy` queue. If no identity is found, a warning is logged and the sync is skipped.
+
+On Coolify, a new deployment usually means a new `SOURCE_COMMIT` (when Coolify exposes it) or a new container name, so each deploy syncs once. The `HOSTNAME` fallback (the container ID) changes whenever the container is recreated, which can trigger extra syncs.
+
+### Triggering a sync manually
+
+- **On production:** set or change `DEPLOYMENT_ID` (e.g. `manual-2026-11-12`) in Coolify and restart. The boot sync runs once.
+- **From a shell with DB access** (locally, or with the production env loaded), create a throwaway script and run it with Payload's runner:
+  ```ts
+  // sync-calendar.ts (don't commit)
+  import { getPayload } from 'payload'
+  import config from '@payload-config'
+
+  const payload = await getPayload({ config })
+  await payload.jobs.queue({ task: 'syncGoogleCalendar', input: {} })
+  console.log(await payload.jobs.run({ limit: 1 }))
+  process.exit(0)
+  ```
+  ```bash
+  npm run payload run ./sync-calendar.ts
+  ```
+- `GET /api/payload-jobs/run?queue=default` with `Authorization: Bearer $CRON_SECRET` (or an admin session) only runs jobs that are **already queued** or scheduled jobs that are due. It does not start a new sync on its own.
+
+After a sync, the public pages still need to be re-rendered. See [Troubleshooting](#troubleshooting).
+
+## Deployment (Coolify)
+
+The app runs as a long-running Node server (`npm run build` → `npm start`, port 3000) next to a Postgres database.
+
+- **Build pack.** The `Dockerfile` in the repo is the stock Next.js example. It copies `.next/standalone`, but `next.config.js` does not set `output: 'standalone'`, and the Dockerfile does not pass any build-time env vars. It does not work as-is. Use Coolify's Nixpacks (Node) build pack, which uses `package-lock.json`, `npm run build` and `npm start`. Pin Node 22 (e.g. `NIXPACKS_NODE_VERSION=22`).
+- **Build-time variables.** `DATABASE_URL`, `PAYLOAD_SECRET` and `NEXT_PUBLIC_SERVER_URL` must be available to the **build** (mark them "Build Variable" in Coolify). The build prerenders `/`, `/aboutus` and `/calendar` from the database, and the `postbuild` step generates the sitemap and robots.txt from `NEXT_PUBLIC_SERVER_URL`. The database must therefore be reachable from the build.
+- **Runtime variables.** All of the above, plus `GOOGLE_API_KEY`, and optionally `CRON_SECRET`, `PREVIEW_SECRET` and `DEPLOYMENT_ID`.
+- **Migrations.** Once migrations exist, run them before the build, e.g. with the custom build command `npm run payload migrate && npm run build`. Alternatively, wire up Payload's `prodMigrations` option in the adapter config.
+- **Persistent storage for uploads.** `Media` stores files on the local filesystem in `public/media` (`/app/public/media` under Nixpacks). Mount a **persistent volume** there. Otherwise every redeploy loses all uploaded images, while the DB rows still point to them.
+- **Calendar sync on deploy.** See [Once-per-deployment sync](#once-per-deployment-sync). Leave `DEPLOYMENT_ID` unset normally and use it only to force a sync. `onInit` also runs during `next build`, so a sync can be triggered at build time if a deployment identity variable is present there.
+
+## Scripts
+
+Run with `npm run <script>`.
+
+| Script | What it does |
+| --- | --- |
+| `dev` | Next.js dev server on :3000 |
+| `build` | Production build (4 GB heap); `postbuild` runs `next-sitemap` |
+| `start` | Serve the production build |
+| `lint` / `lint:fix` | ESLint via `next lint` |
+| `generate:types` | Regenerate `src/payload-types.ts` after schema changes |
+| `generate:importmap` | Regenerate the admin import map after adding or changing admin components |
+| `payload <cmd>` | Payload CLI: `migrate*`, `jobs:run`, `run <script>`, ... |
+| `test:int` | Vitest integration tests (`tests/int`) |
+| `test:e2e` | Playwright tests (`tests/e2e`) |
+| `test`, `dev:prod`, `ii`, `reinstall` | Template scripts that call `pnpm`. They fail without pnpm installed and don't match the npm lockfile. |
+
+## Testing
+
+- **Integration (Vitest).** `npm run test:int` runs `tests/int/**/*.int.spec.ts` in jsdom and loads `.env`. It boots Payload against `DATABASE_URL`, which therefore must point to a migrated database. Use a local/dev DB, not production.
+- **E2E (Playwright).** `npm run test:e2e`. The config's `webServer` command is `pnpm dev` with `reuseExistingServer: true`, so start `npm run dev` first if you don't have pnpm. Run `npx playwright install chromium` once.
+  - `admin.e2e.spec.ts` seeds and removes a `dev@payloadcms.com` test user, so run it against a dev database.
+  - `frontend.e2e.spec.ts` is still the template test. It expects the title "Payload Website Template" on `/`, so it currently fails against the SPPDF landing page.
+
+`npm test` runs both suites, but via `pnpm`.
+
+## Troubleshooting
+
+**Calendar or new events don't show up on the site.**
+`/` and `/calendar` are rendered at build time and then re-rendered at most every 5 minutes (ISR):
+- Saving, publishing or deleting an event in the admin revalidates `/` and `/calendar` immediately.
+- Events written by the calendar sync appear within about 5 minutes of the sync finishing. The sync runs hourly.
+- The homepage carousel shows the 3 most recent past events and the next 9 upcoming ones. `/calendar` shows the last 12 months and everything upcoming.
+- Check the Landing Page global and Team Members collection hooks for how `/aboutus` and the shared nav/footer are refreshed.
+
+To check that the sync itself works, look for `Google Calendar sync complete: X created, Y updated, Z unpublished, N failed` in the Coolify logs, or for `Error running task` and `GOOGLE_API_KEY environment variable is not set`. Then check that the events exist in Admin → Events.
+
+**`relation "..." does not exist`.**
+The database has no schema. See [Database & migrations](#database--migrations). `push` is disabled, including in dev.
+
+**Sync fails with a Google API error.**
+Check that the key is valid, that the Calendar API is enabled for its project, and that any key restrictions allow the server. Check that `sppdfmuni@gmail.com` is shared publicly with full event details.
+
+**Some events are missing after a sync.**
+Look for `Google Calendar sync: failed to save event` in the logs. Each failing event is logged with its title and Google ID.
+
+**"Skipping deploy calendar sync: no deployment identity env var found".**
+Set `DEPLOYMENT_ID`. The hourly schedule still runs regardless.
+
+**Images missing after a redeploy.**
+`public/media` is not on a persistent volume. See [Deployment](#deployment-coolify).
+
+**Build fails on Coolify while collecting page data.**
+`DATABASE_URL` or `PAYLOAD_SECRET` is not available at build time, the DB is not reachable from the build, or the schema is behind the code (run migrations first).
