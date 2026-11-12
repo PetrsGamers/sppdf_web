@@ -118,6 +118,7 @@ export interface Config {
     footer: Footer;
     'landing-page': LandingPage;
     'about-page': AboutPage;
+    'calendar-page': CalendarPage;
     'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
@@ -125,6 +126,7 @@ export interface Config {
     footer: FooterSelect<false> | FooterSelect<true>;
     'landing-page': LandingPageSelect<false> | LandingPageSelect<true>;
     'about-page': AboutPageSelect<false> | AboutPageSelect<true>;
+    'calendar-page': CalendarPageSelect<false> | CalendarPageSelect<true>;
     'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: null;
@@ -793,34 +795,49 @@ export interface Form {
   createdAt: string;
 }
 /**
+ * Akce zobrazené na hlavní stránce a v kalendáři (/calendar). Na webu se zobrazují jen publikované akce. Akce se každý den ráno automaticky načítají z Google Kalendáře spolku. U takto načtených akcí se název, datum, čas, délka, místo, popis i stav „publikováno“ při další synchronizaci přepíšou podle Google Kalendáře – měňte je proto přímo tam. Kategorii, barvu a odkaz na registraci můžete doplnit zde, ty synchronizace nepřepisuje. Akce, které mají v popisu v Google Kalendáři slovo „internal“, se na web nenačítají.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "events".
  */
 export interface Event {
   id: number;
   title: string;
+  /**
+   * Podle tohoto data se akce řadí a zobrazí ve správném dni kalendáře.
+   */
   date: string;
   /**
-   * Display time, e.g. "14:00"
+   * Jak se čas vypíše na webu, např. „14:00“ nebo „14:00–16:00“.
    */
   time?: string | null;
   /**
-   * e.g. "3 hodiny"
+   * Např. „3 hodiny“. Na hlavní stránce se ukáže, jen když chybí místo i čas.
    */
   duration?: string | null;
+  /**
+   * Např. „Aula PdF, Poříčí 7“.
+   */
   location?: string | null;
+  /**
+   * Zobrazí se v detailu akce v kalendáři (/calendar).
+   */
   description?: string | null;
+  /**
+   * Kam vede tlačítko „Registrovat se“ v kalendáři (např. odkaz na Google formulář). Když necháte prázdné, použije se výchozí odkaz ze Stránky Kalendář; pokud není ani ten, tlačítko se nezobrazí. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+   */
+  registrationUrl?: string | null;
+  /**
+   * Štítek nad názvem akce.
+   */
   category?: ('kulturní' | 'volný čas' | 'studijní' | 'workshop' | 'konference') | null;
   /**
-   * Badge color for the category
+   * Barva štítku s kategorií. Když nevyberete, použije se oranžová.
    */
   categoryColor?: ('orange' | 'blue' | 'green' | 'purple') | null;
-  /**
-   * Show as the large "today" card
-   */
   featured?: boolean | null;
   /**
-   * Auto-populated by Google Calendar sync
+   * Vyplňuje se automaticky u akcí načtených z Google Kalendáře. Prázdné = akce byla přidána ručně zde.
    */
   googleCalendarEventId?: string | null;
   /**
@@ -1322,6 +1339,7 @@ export interface EventsSelect<T extends boolean = true> {
   duration?: T;
   location?: T;
   description?: T;
+  registrationUrl?: T;
   category?: T;
   categoryColor?: T;
   featured?: T;
@@ -2109,6 +2127,47 @@ export interface AboutPage {
   createdAt?: string | null;
 }
 /**
+ * Texty stránky s měsíčním kalendářem (/calendar). Samotné akce spravujete v sekci Kalendář → Akce.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "calendar-page".
+ */
+export interface CalendarPage {
+  id: number;
+  texts?: {
+    /**
+     * Za text se automaticky doplní akademický rok, např. „Akademický rok 2026/27“.
+     */
+    academicYearLabel?: string | null;
+    registerButtonLabel?: string | null;
+    /**
+     * Použije se u akcí, které nemají vlastní „Odkaz na registraci“. Když necháte prázdné, tlačítko se u takových akcí nezobrazí. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+     */
+    defaultRegistrationUrl?: string | null;
+    selectDayText?: string | null;
+    /**
+     * Místo {datum} se doplní vybraný den, např. „12. Listopad“.
+     */
+    noEventsText?: string | null;
+  };
+  seo?: {
+    /**
+     * Zobrazuje se v záložce prohlížeče, ve výsledcích Googlu a při sdílení odkazu. Ideálně do 60 znaků. Když necháte prázdné, použije se výchozí titulek z Nastavení webu.
+     */
+    title?: string | null;
+    /**
+     * Krátké shrnutí stránky (1–2 věty, ideálně do 160 znaků) pro Google a náhled při sdílení na sociálních sítích. Když necháte prázdné, použije se výchozí popis z Nastavení webu.
+     */
+    description?: string | null;
+    /**
+     * Obrázek, který se ukáže při sdílení odkazu (Facebook, WhatsApp, Messenger…). Ideální rozměr 1200 × 630 px. Když necháte prázdné, použije se výchozí obrázek z Nastavení webu.
+     */
+    image?: (number | null) | Media;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-jobs-stats".
  */
@@ -2341,6 +2400,31 @@ export interface AboutPageSelect<T extends boolean = true> {
         primaryLink?: T;
         secondaryLabel?: T;
         secondaryLink?: T;
+      };
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "calendar-page_select".
+ */
+export interface CalendarPageSelect<T extends boolean = true> {
+  texts?:
+    | T
+    | {
+        academicYearLabel?: T;
+        registerButtonLabel?: T;
+        defaultRegistrationUrl?: T;
+        selectDayText?: T;
+        noEventsText?: T;
       };
   seo?:
     | T

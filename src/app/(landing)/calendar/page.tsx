@@ -1,6 +1,7 @@
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 
+import { getGlobal } from '../_lib/getGlobal'
 import { CalendarView } from './_components/CalendarView'
 
 export default async function CalendarPage() {
@@ -15,5 +16,7 @@ export default async function CalendarPage() {
     limit: 100,
   })
 
-  return <CalendarView events={eventsData.docs} />
+  const calendarPage = await getGlobal('calendar-page')
+
+  return <CalendarView events={eventsData.docs} texts={calendarPage.texts} />
 }

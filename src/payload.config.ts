@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url'
 
 import { defaultLexical } from '@/fields/defaultLexical'
 import { AboutPage } from './AboutPage/config'
+import { CalendarPage } from './CalendarPage/config'
 import { Categories } from './collections/Categories'
 import { Events } from './collections/Events'
 import { Media } from './collections/Media'
@@ -93,7 +94,7 @@ export default buildConfig({
   }),
   collections: [Pages, Posts, Events, Media, Categories, Users, TeamMembers],
   cors: [getServerSideURL()].filter(Boolean),
-  globals: [Header, Footer, LandingPage, AboutPage],
+  globals: [Header, Footer, LandingPage, AboutPage, CalendarPage],
   plugins,
   secret: process.env.PAYLOAD_SECRET,
   sharp,

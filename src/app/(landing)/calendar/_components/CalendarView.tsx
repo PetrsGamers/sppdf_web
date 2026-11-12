@@ -1,11 +1,15 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import type { Event } from '@/payload-types'
+import type { CalendarPage, Event } from '@/payload-types'
+import { calendarDefaults } from '@/CalendarPage/defaults'
 
 type Props = {
   events: Event[]
+  texts?: CalendarPage['texts']
 }
+
+const D = calendarDefaults.texts
 
 const categoryColorMap: Record<string, string> = {
   orange: 'bg-orange-50 text-primary',
@@ -21,7 +25,13 @@ const MONTH_NAMES = [
 
 const DAY_NAMES = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne']
 
-export function CalendarView({ events }: Props) {
+export function CalendarView({ events, texts }: Props) {
+  const academicYearLabel = texts?.academicYearLabel ?? D.academicYearLabel
+  const registerButtonLabel = texts?.registerButtonLabel ?? D.registerButtonLabel
+  const defaultRegistrationUrl = texts?.defaultRegistrationUrl || D.defaultRegistrationUrl
+  const selectDayText = texts?.selectDayText ?? D.selectDayText
+  const noEventsText = texts?.noEventsText ?? D.noEventsText
+
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
@@ -94,7 +104,7 @@ export function CalendarView({ events }: Props) {
             school
           </span>
           <span className="text-xs font-bold text-on-surface-variant tracking-widest uppercase">
-            Akademický rok {academicYear}
+            {academicYearLabel} {academicYear}
           </span>
         </div>
         <div className="flex items-center gap-4 mb-10">
@@ -104,12 +114,14 @@ export function CalendarView({ events }: Props) {
           <div className="flex gap-1.5 ml-4">
             <button
               onClick={prevMonth}
+              aria-label="Předchozí měsíc"
               className="w-9 h-9 flex items-center justify-center bg-white border border-stone-200 rounded-lg hover:bg-surface-container-high hover:border-transparent transition-all active:scale-95"
             >
               <span className="material-symbols-outlined text-lg">chevron_left</span>
             </button>
             <button
               onClick={nextMonth}
+              aria-label="Další měsíc"
               className="w-9 h-9 flex items-center justify-center bg-white border border-stone-200 rounded-lg hover:bg-surface-container-high hover:border-transparent transition-all active:scale-95"
             >
               <span className="material-symbols-outlined text-lg">chevron_right</span>
@@ -195,6 +207,7 @@ export function CalendarView({ events }: Props) {
                     categoryColorMap[event.categoryColor ?? 'orange'] ?? 'bg-stone-100 text-stone-600'
                   const eventDate = new Date(event.date)
                   const formattedDate = `${eventDate.getDate()}. ${MONTH_NAMES[eventDate.getMonth()]}`
+                  const registrationUrl = event.registrationUrl || defaultRegistrationUrl
 
                   return (
                     <div
@@ -237,13 +250,17 @@ export function CalendarView({ events }: Props) {
                         </p>
                       )}
 
-                      <a
-                        href="#"
-                        className="hero-gradient text-on-primary w-full py-3.5 rounded-xl font-headline font-extrabold flex items-center justify-center gap-2 transition-transform hover:-translate-y-0.5 active:scale-[0.98] shadow-lg shadow-primary/20"
-                      >
-                        Registrovat se
-                        <span className="material-symbols-outlined text-lg">arrow_forward</span>
-                      </a>
+                      {registrationUrl && registerButtonLabel && (
+                        <a
+                          href={registrationUrl}
+                          className="hero-gradient text-on-primary w-full py-3.5 rounded-xl font-headline font-extrabold flex items-center justify-center gap-2 transition-transform hover:-translate-y-0.5 active:scale-[0.98] shadow-lg shadow-primary/20"
+                        >
+                          {registerButtonLabel}
+                          <span aria-hidden="true" className="material-symbols-outlined text-lg">
+                            arrow_forward
+                          </span>
+                        </a>
+                      )}
                     </div>
                   )
                 })}
@@ -256,8 +273,8 @@ export function CalendarView({ events }: Props) {
                   </span>
                   <p className="text-on-surface-variant text-sm">
                     {selectedDay
-                      ? `Na ${selectedDay}. ${MONTH_NAMES[month]} nejsou plánovány žádné události.`
-                      : 'Vyberte den v kalendáři pro zobrazení událostí.'}
+                      ? noEventsText.replace(/\{datum\}/g, `${selectedDay}. ${MONTH_NAMES[month]}`)
+                      : selectDayText}
                   </p>
                 </div>
               </div>
