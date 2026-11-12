@@ -154,22 +154,24 @@ Notes:
 - Events have drafts, autosave and scheduled publishing. Only **published** events are shown.
 - Events created by the calendar sync have a read-only `googleCalendarEventId`. The next sync overwrites their title, date, time, location and description and publishes them again. Edit them in Google Calendar instead.
 - The `/aboutus` history section and some texts and links are hardcoded in `src/app/(landing)`, not in the CMS.
-- Landing pages are static. See [Troubleshooting](#troubleshooting) for when a change shows up.
+- `/` and `/calendar` re-render at most every 5 minutes; saving an event in the admin refreshes them immediately. See [Troubleshooting](#troubleshooting).
 
 ## Google Calendar sync
 
 `src/jobs/syncGoogleCalendar.ts` registers the Payload task `syncGoogleCalendar`, which works like this:
 
-1. It reads upcoming events (`timeMin = now`, recurring events expanded, up to 250) from the calendar `sppdfmuni@gmail.com`. The calendar ID is hardcoded. Authentication uses `GOOGLE_API_KEY` only, so **the calendar must be public** ("Make available to public → See all event details").
+1. It reads all upcoming events (`timeMin = now`, recurring events expanded, all result pages) from the calendar `sppdfmuni@gmail.com`. The calendar ID is hardcoded. Authentication uses `GOOGLE_API_KEY` only, so **the calendar must be public** ("Make available to public → See all event details").
 2. It skips events whose description contains `internal` (case-insensitive).
-3. It matches existing CMS events by `googleCalendarEventId`, updates them or creates new ones, and always sets them to **published**. It never deletes CMS events: events removed from Google, and events in the past, stay as they are.
-4. It stores the start time as `HH:MM` formatted in the server's time zone. A duration string is computed from the end time.
+3. It matches existing CMS events by `googleCalendarEventId`, updates them or creates new ones, and always sets them to **published**. The slug is the title plus the Google event ID, so recurring events with the same title don't collide. A failure on one event is logged and the sync continues.
+4. Upcoming synced events that no longer appear in Google (deleted or cancelled) are **unpublished**, not deleted. Past events are left as they are.
+5. It stores the start time as `HH:MM` in `Europe/Prague`. A duration string is computed from the end time.
+6. It writes with revalidation disabled, because `revalidatePath()` throws outside a request (the job runs from the `autoRun` cron). `/` and `/calendar` instead use time-based revalidation (`export const revalidate = 300`), so synced events appear within about 5 minutes.
 
 ### Schedule
 
 These settings live in `jobs` in `src/payload.config.ts`:
 
-- `schedule: [{ cron: '0 6 * * *', queue: 'default' }]` queues a sync every day at 06:00 in **server time (UTC in the container)**.
+- `schedule: [{ cron: '0 * * * *', queue: 'default' }]` queues a sync every hour.
 - `autoRun: [{ cron: '*/5 * * * *', queue: 'default' }]`: the running Next.js server checks the `default` queue every 5 minutes, queues scheduled jobs and runs them. This needs a long-running Node process, which Coolify provides. No external cron is needed.
 - Failed runs retry 2× with exponential backoff (60 s). Completed jobs are deleted (`deleteJobOnComplete`).
 
@@ -240,13 +242,13 @@ Run with `npm run <script>`.
 ## Troubleshooting
 
 **Calendar or new events don't show up on the site.**
-`/`, `/aboutus` and `/calendar` are statically rendered at build time and only refreshed by on-demand revalidation:
-- Saving, publishing or deleting an event in the admin revalidates `/` and `/calendar`.
-- Saving the Landing Page global revalidates `/` only. `/aboutus` and `/calendar` keep the old nav and footer until the next deploy.
-- Team member changes trigger no revalidation, so `/aboutus` updates on the next deploy.
-- The calendar sync writes with revalidation **disabled**. Synced events appear after the next deploy, or once any event is saved in the admin.
+`/` and `/calendar` are rendered at build time and then re-rendered at most every 5 minutes (ISR):
+- Saving, publishing or deleting an event in the admin revalidates `/` and `/calendar` immediately.
+- Events written by the calendar sync appear within about 5 minutes of the sync finishing. The sync runs hourly.
+- The homepage carousel shows the 3 most recent past events and the next 9 upcoming ones. `/calendar` shows the last 12 months and everything upcoming.
+- Check the Landing Page global and Team Members collection hooks for how `/aboutus` and the shared nav/footer are refreshed.
 
-To check that the sync itself works, look for `Google Calendar sync complete: X created, Y updated` in the Coolify logs, or for `Error running task` and `GOOGLE_API_KEY environment variable is not set`. Then check that the events exist in Admin → Events.
+To check that the sync itself works, look for `Google Calendar sync complete: X created, Y updated, Z unpublished, N failed` in the Coolify logs, or for `Error running task` and `GOOGLE_API_KEY environment variable is not set`. Then check that the events exist in Admin → Events.
 
 **`relation "..." does not exist`.**
 The database has no schema. See [Database & migrations](#database--migrations). `push` is disabled, including in dev.
@@ -254,14 +256,11 @@ The database has no schema. See [Database & migrations](#database--migrations). 
 **Sync fails with a Google API error.**
 Check that the key is valid, that the Calendar API is enabled for its project, and that any key restrictions allow the server. Check that `sppdfmuni@gmail.com` is shared publicly with full event details.
 
-**Sync fails partway with a unique-constraint error.**
-Events get a slug from their title, and slugs are unique. Two Google events with the same title, such as instances of a recurring event, collide.
-
-**Event times are off by 1–2 hours.**
-Times are formatted in the server time zone (UTC in the container), not `Europe/Prague`.
+**Some events are missing after a sync.**
+Look for `Google Calendar sync: failed to save event` in the logs. Each failing event is logged with its title and Google ID.
 
 **"Skipping deploy calendar sync: no deployment identity env var found".**
-Set `DEPLOYMENT_ID`. The daily schedule still runs regardless.
+Set `DEPLOYMENT_ID`. The hourly schedule still runs regardless.
 
 **Images missing after a redeploy.**
 `public/media` is not on a persistent volume. See [Deployment](#deployment-coolify).
