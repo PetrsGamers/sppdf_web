@@ -24,6 +24,8 @@ export const Media: CollectionConfig = {
   folders: true,
   admin: {
     group: 'Obsah webu',
+    defaultColumns: ['filename', 'alt', 'updatedAt'],
+    listSearchableFields: ['filename', 'alt'],
     description:
       'Všechny nahrané fotky a soubory. Obrázek nahrajte sem, nebo rovnou u pole „Obrázek“ na konkrétní stránce. ' +
       'Smazaný obrázek zmizí ze všech stránek, kde byl použitý.',
