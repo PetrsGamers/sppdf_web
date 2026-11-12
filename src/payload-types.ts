@@ -67,13 +67,13 @@ export interface Config {
   };
   blocks: {};
   collections: {
+    'team-members': TeamMember;
+    media: Media;
+    events: Event;
+    users: User;
     pages: Page;
     posts: Post;
-    events: Event;
-    media: Media;
     categories: Category;
-    users: User;
-    'team-members': TeamMember;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -91,13 +91,13 @@ export interface Config {
     };
   };
   collectionsSelect: {
+    'team-members': TeamMembersSelect<false> | TeamMembersSelect<true>;
+    media: MediaSelect<false> | MediaSelect<true>;
+    events: EventsSelect<false> | EventsSelect<true>;
+    users: UsersSelect<false> | UsersSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
-    events: EventsSelect<false> | EventsSelect<true>;
-    media: MediaSelect<false> | MediaSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
-    users: UsersSelect<false> | UsersSelect<true>;
-    'team-members': TeamMembersSelect<false> | TeamMembersSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -114,15 +114,21 @@ export interface Config {
   };
   fallbackLocale: null;
   globals: {
+    'landing-page': LandingPage;
+    'about-page': AboutPage;
+    'calendar-page': CalendarPage;
+    'site-settings': SiteSetting;
     header: Header;
     footer: Footer;
-    'landing-page': LandingPage;
     'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
+    'landing-page': LandingPageSelect<false> | LandingPageSelect<true>;
+    'about-page': AboutPageSelect<false> | AboutPageSelect<true>;
+    'calendar-page': CalendarPageSelect<false> | CalendarPageSelect<true>;
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
-    'landing-page': LandingPageSelect<false> | LandingPageSelect<true>;
     'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: null;
@@ -159,6 +165,240 @@ export interface UserAuthOperations {
     email: string;
     password: string;
   };
+}
+/**
+ * Lidé zobrazení v bloku „Náš tým“ na stránce O nás. Řadí se podle pole Pořadí (od nejmenšího čísla). Když nebude zadaný nikdo, blok s týmem se skryje.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "team-members".
+ */
+export interface TeamMember {
+  id: number;
+  name: string;
+  /**
+   * Např. „Předseda“, „Místopředsedkyně“, „PR koordinátorka“.
+   */
+  role: string;
+  /**
+   * Portrét, ideálně čtvercový (zobrazí se ve výřezu kruhu). Bez fotky se ukáže ikonka postavy.
+   */
+  photo?: (number | null) | Media;
+  /**
+   * Menší číslo = víc vlevo / dřív. Např. předseda 1, místopředseda 2… Lidé se stejným číslem se řadí libovolně.
+   */
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Všechny nahrané fotky a soubory. Obrázek nahrajte sem, nebo rovnou u pole „Obrázek“ na konkrétní stránce. Smazaný obrázek zmizí ze všech stránek, kde byl použitý.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  /**
+   * Krátce popište, co je na obrázku (např. „Členové spolku na vánočním večírku“). Přečte ho hlasová čtečka pro nevidomé a Google; zobrazí se i tehdy, když se obrázek nenačte.
+   */
+  alt?: string | null;
+  /**
+   * Na hlavních stránkách webu se nepoužívá.
+   */
+  caption?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  folder?: (number | null) | FolderInterface;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    square?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    small?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    medium?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    large?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    xlarge?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    og?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-folders".
+ */
+export interface FolderInterface {
+  id: number;
+  name: string;
+  folder?: (number | null) | FolderInterface;
+  documentsAndFolders?: {
+    docs?: (
+      | {
+          relationTo?: 'payload-folders';
+          value: number | FolderInterface;
+        }
+      | {
+          relationTo?: 'media';
+          value: number | Media;
+        }
+    )[];
+    hasNextPage?: boolean;
+    totalDocs?: number;
+  };
+  folderType?: 'media'[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Akce zobrazené na hlavní stránce a v kalendáři (/calendar). Na webu se zobrazují jen publikované akce. Akce se každý den ráno automaticky načítají z Google Kalendáře spolku. U takto načtených akcí se název, datum, čas, délka, místo, popis i stav „publikováno“ při další synchronizaci přepíšou podle Google Kalendáře – měňte je proto přímo tam. Kategorii, barvu a odkaz na registraci můžete doplnit zde, ty synchronizace nepřepisuje. Akce, které mají v popisu v Google Kalendáři slovo „internal“, se na web nenačítají.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events".
+ */
+export interface Event {
+  id: number;
+  title: string;
+  /**
+   * Podle tohoto data se akce řadí a zobrazí ve správném dni kalendáře.
+   */
+  date: string;
+  /**
+   * Jak se čas vypíše na webu, např. „14:00“ nebo „14:00–16:00“.
+   */
+  time?: string | null;
+  /**
+   * Např. „3 hodiny“. Na hlavní stránce se ukáže, jen když chybí místo i čas.
+   */
+  duration?: string | null;
+  /**
+   * Např. „Aula PdF, Poříčí 7“.
+   */
+  location?: string | null;
+  /**
+   * Zobrazí se v detailu akce v kalendáři (/calendar).
+   */
+  description?: string | null;
+  /**
+   * Kam vede tlačítko „Registrovat se“ v kalendáři (např. odkaz na Google formulář). Když necháte prázdné, použije se výchozí odkaz ze Stránky Kalendář; pokud není ani ten, tlačítko se nezobrazí. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+   */
+  registrationUrl?: string | null;
+  /**
+   * Štítek nad názvem akce.
+   */
+  category?: ('kulturní' | 'volný čas' | 'studijní' | 'workshop' | 'konference') | null;
+  /**
+   * Barva štítku s kategorií. Když nevyberete, použije se oranžová.
+   */
+  categoryColor?: ('orange' | 'blue' | 'green' | 'purple') | null;
+  featured?: boolean | null;
+  /**
+   * Vyplňuje se automaticky u akcí načtených z Google Kalendáře. Prázdné = akce byla přidána ručně zde.
+   */
+  googleCalendarEventId?: string | null;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * Lidé, kteří se mohou přihlásit do administrace. Každý přihlášený uživatel může upravovat celý web i přidávat další uživatele – přístup dávejte jen důvěryhodným lidem.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  name?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -281,125 +521,6 @@ export interface Post {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: number;
-  alt?: string | null;
-  caption?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  folder?: (number | null) | FolderInterface;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-  sizes?: {
-    thumbnail?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    square?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    small?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    medium?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    large?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    xlarge?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-    og?: {
-      url?: string | null;
-      width?: number | null;
-      height?: number | null;
-      mimeType?: string | null;
-      filesize?: number | null;
-      filename?: string | null;
-    };
-  };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-folders".
- */
-export interface FolderInterface {
-  id: number;
-  name: string;
-  folder?: (number | null) | FolderInterface;
-  documentsAndFolders?: {
-    docs?: (
-      | {
-          relationTo?: 'payload-folders';
-          value: number | FolderInterface;
-        }
-      | {
-          relationTo?: 'media';
-          value: number | Media;
-        }
-    )[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  folderType?: 'media'[] | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories".
  */
 export interface Category {
@@ -421,32 +542,6 @@ export interface Category {
     | null;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: number;
-  name?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -792,65 +887,6 @@ export interface Form {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "events".
- */
-export interface Event {
-  id: number;
-  title: string;
-  date: string;
-  /**
-   * Display time, e.g. "14:00"
-   */
-  time?: string | null;
-  /**
-   * e.g. "3 hodiny"
-   */
-  duration?: string | null;
-  location?: string | null;
-  description?: string | null;
-  category?: ('kulturní' | 'volný čas' | 'studijní' | 'workshop' | 'konference') | null;
-  /**
-   * Badge color for the category
-   */
-  categoryColor?: ('orange' | 'blue' | 'green' | 'purple') | null;
-  /**
-   * Show as the large "today" card
-   */
-  featured?: boolean | null;
-  /**
-   * Auto-populated by Google Calendar sync
-   */
-  googleCalendarEventId?: string | null;
-  /**
-   * When enabled, the slug will auto-generate from the title field on save and autosave.
-   */
-  generateSlug?: boolean | null;
-  slug: string;
-  updatedAt: string;
-  createdAt: string;
-  _status?: ('draft' | 'published') | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "team-members".
- */
-export interface TeamMember {
-  id: number;
-  name: string;
-  /**
-   * e.g. "Předseda", "Místopředsedkyně"
-   */
-  role: string;
-  photo?: (number | null) | Media;
-  /**
-   * Display order (lower numbers first)
-   */
-  order?: number | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
 export interface Redirect {
@@ -1049,6 +1085,22 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
+        relationTo: 'team-members';
+        value: number | TeamMember;
+      } | null)
+    | ({
+        relationTo: 'media';
+        value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'events';
+        value: number | Event;
+      } | null)
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
         relationTo: 'pages';
         value: number | Page;
       } | null)
@@ -1057,24 +1109,8 @@ export interface PayloadLockedDocument {
         value: number | Post;
       } | null)
     | ({
-        relationTo: 'events';
-        value: number | Event;
-      } | null)
-    | ({
-        relationTo: 'media';
-        value: number | Media;
-      } | null)
-    | ({
         relationTo: 'categories';
         value: number | Category;
-      } | null)
-    | ({
-        relationTo: 'users';
-        value: number | User;
-      } | null)
-    | ({
-        relationTo: 'team-members';
-        value: number | TeamMember;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -1137,6 +1173,157 @@ export interface PayloadMigration {
   batch?: number | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "team-members_select".
+ */
+export interface TeamMembersSelect<T extends boolean = true> {
+  name?: T;
+  role?: T;
+  photo?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media_select".
+ */
+export interface MediaSelect<T extends boolean = true> {
+  alt?: T;
+  caption?: T;
+  folder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        square?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        small?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        medium?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        large?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        xlarge?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        og?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events_select".
+ */
+export interface EventsSelect<T extends boolean = true> {
+  title?: T;
+  date?: T;
+  time?: T;
+  duration?: T;
+  location?: T;
+  description?: T;
+  registrationUrl?: T;
+  category?: T;
+  categoryColor?: T;
+  featured?: T;
+  googleCalendarEventId?: T;
+  generateSlug?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users_select".
+ */
+export interface UsersSelect<T extends boolean = true> {
+  name?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1306,121 +1493,6 @@ export interface PostsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "events_select".
- */
-export interface EventsSelect<T extends boolean = true> {
-  title?: T;
-  date?: T;
-  time?: T;
-  duration?: T;
-  location?: T;
-  description?: T;
-  category?: T;
-  categoryColor?: T;
-  featured?: T;
-  googleCalendarEventId?: T;
-  generateSlug?: T;
-  slug?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  _status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media_select".
- */
-export interface MediaSelect<T extends boolean = true> {
-  alt?: T;
-  caption?: T;
-  folder?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
-  sizes?:
-    | T
-    | {
-        thumbnail?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        square?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        small?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        medium?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        large?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        xlarge?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-        og?:
-          | T
-          | {
-              url?: T;
-              width?: T;
-              height?: T;
-              mimeType?: T;
-              filesize?: T;
-              filename?: T;
-            };
-      };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories_select".
  */
 export interface CategoriesSelect<T extends boolean = true> {
@@ -1436,41 +1508,6 @@ export interface CategoriesSelect<T extends boolean = true> {
         label?: T;
         id?: T;
       };
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users_select".
- */
-export interface UsersSelect<T extends boolean = true> {
-  name?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  email?: T;
-  resetPasswordToken?: T;
-  resetPasswordExpiration?: T;
-  salt?: T;
-  hash?: T;
-  loginAttempts?: T;
-  lockUntil?: T;
-  sessions?:
-    | T
-    | {
-        id?: T;
-        createdAt?: T;
-        expiresAt?: T;
-      };
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "team-members_select".
- */
-export interface TeamMembersSelect<T extends boolean = true> {
-  name?: T;
-  role?: T;
-  photo?: T;
-  order?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1751,6 +1788,382 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   createdAt?: T;
 }
 /**
+ * Texty a obrázky hlavní stránky. V záložkách „Menu“ a „Patička“ upravíte také horní menu a patičku, které se zobrazují na všech stránkách webu. Změny se na webu projeví hned po uložení.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "landing-page".
+ */
+export interface LandingPage {
+  id: number;
+  hero: {
+    /**
+     * Malý barevný štítek nad hlavním nadpisem. Prázdné = štítek se nezobrazí.
+     */
+    badge?: string | null;
+    /**
+     * Slova ve dvojitých složených závorkách se zvýrazní barvou spolku. Např. „Inspirujeme {{budoucí}} učitele.“
+     */
+    headline: string;
+    /**
+     * Krátký text pod nadpisem. Nepovinné.
+     */
+    subtitle?: string | null;
+    ctaPrimary?: {
+      /**
+       * Prázdné = tlačítko se nezobrazí.
+       */
+      label?: string | null;
+      /**
+       * Hodnota # znamená, že tlačítko nikam nevede. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+       */
+      link?: string | null;
+    };
+    ctaSecondary?: {
+      /**
+       * Prázdné = tlačítko se nezobrazí.
+       */
+      label?: string | null;
+      /**
+       * Hodnota # znamená, že tlačítko nikam nevede. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+       */
+      link?: string | null;
+    };
+    /**
+     * Velká fotka vpravo od nadpisu (na šířku, ideálně alespoň 1200 px). Popis obrázku (alt) vyplňte přímo u obrázku v sekci Obrázky a soubory.
+     */
+    image?: (number | null) | Media;
+  };
+  ribbon?: {
+    /**
+     * Krátká hesla nebo názvy akcí, které běží dokola. Pořadí změníte přetažením. Pokud seznam necháte úplně prázdný, zobrazí se výchozí ukázkové texty.
+     */
+    items?:
+      | {
+          text: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  calendarSection?: {
+    heading?: string | null;
+    description?: string | null;
+    endCardTitle?: string | null;
+    endCardText?: string | null;
+    ctaHeading?: string | null;
+    ctaText?: string | null;
+    ctaButtonLabel?: string | null;
+    /**
+     * Obvykle /calendar. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+     */
+    ctaButtonLink?: string | null;
+  };
+  divisions?: {
+    heading?: string | null;
+    description?: string | null;
+    /**
+     * Každá karta = jedna sekce spolku. Pořadí změníte přetažením. Když nebude žádná karta, celý blok se skryje.
+     */
+    items?:
+      | {
+          title: string;
+          /**
+           * Anglický název ikony ze sady Material Symbols, malými písmeny a s podtržítky (např. groups, celebration, school, photo_camera, mail). Všechny ikony najdete na https://fonts.google.com/icons – klikněte na ikonu a zkopírujte její název.
+           */
+          icon: string;
+          description?: string | null;
+          /**
+           * Fotka na šířku. Bez obrázku se zobrazí šedá plocha.
+           */
+          image?: (number | null) | Media;
+          /**
+           * Prázdné = odkaz se nezobrazí.
+           */
+          linkLabel?: string | null;
+          /**
+           * Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+           */
+          linkUrl?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  nav?: {
+    /**
+     * Odkazy v horním menu. Pořadí změníte přetažením. Pokud seznam necháte prázdný, zobrazí se Domů / O nás / Kalendář.
+     */
+    links?:
+      | {
+          label: string;
+          /**
+           * Např. /, /aboutus nebo /calendar. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+           */
+          url: string;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Prázdné = tlačítko se nezobrazí.
+     */
+    ctaLabel?: string | null;
+    /**
+     * Např. odkaz na přihlášku do spolku. Hodnota # znamená, že tlačítko nikam nevede. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+     */
+    ctaLink?: string | null;
+  };
+  footer?: {
+    description?: string | null;
+    /**
+     * Kulaté ikonky s odkazy (Instagram, Facebook, e-mail…). Pokud seznam necháte prázdný, zobrazí se dvě ukázkové ikonky bez odkazu.
+     */
+    socialLinks?:
+      | {
+          /**
+           * Např. Instagram. Na webu není vidět, ale přečte ho hlasová čtečka pro nevidomé.
+           */
+          label?: string | null;
+          /**
+           * Anglický název ikony ze sady Material Symbols, malými písmeny a s podtržítky (např. groups, celebration, school, photo_camera, mail). Všechny ikony najdete na https://fonts.google.com/icons – klikněte na ikonu a zkopírujte její název.
+           */
+          icon: string;
+          /**
+           * Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+           */
+          url: string;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Sloupce odkazů vpravo v patičce (např. „Rychlé odkazy“, „Informace“). Pokud seznam necháte prázdný, zobrazí se výchozí sloupce.
+     */
+    linkColumns?:
+      | {
+          heading: string;
+          links?:
+            | {
+                label: string;
+                /**
+                 * Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+                 */
+                url: string;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Text úplně dole. Napište {rok} a web místo něj doplní aktuální rok (např. „© {rok} SPPDF“).
+     */
+    copyright?: string | null;
+    /**
+     * Malý šedý text vpravo dole. Prázdné = nezobrazí se.
+     */
+    credit?: string | null;
+  };
+  seo?: {
+    /**
+     * Zobrazuje se v záložce prohlížeče, ve výsledcích Googlu a při sdílení odkazu. Ideálně do 60 znaků. Když necháte prázdné, použije se výchozí titulek z Nastavení webu.
+     */
+    title?: string | null;
+    /**
+     * Krátké shrnutí stránky (1–2 věty, ideálně do 160 znaků) pro Google a náhled při sdílení na sociálních sítích. Když necháte prázdné, použije se výchozí popis z Nastavení webu.
+     */
+    description?: string | null;
+    /**
+     * Obrázek, který se ukáže při sdílení odkazu (Facebook, WhatsApp, Messenger…). Ideální rozměr 1200 × 630 px. Když necháte prázdné, použije se výchozí obrázek z Nastavení webu.
+     */
+    image?: (number | null) | Media;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Texty stránky O nás (/aboutus). Jednotlivé členy týmu přidáváte v sekci Obsah webu → Členové týmu. Změny se na webu projeví hned po uložení.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "about-page".
+ */
+export interface AboutPage {
+  id: number;
+  intro?: {
+    /**
+     * Prázdné = štítek se nezobrazí.
+     */
+    badge?: string | null;
+    /**
+     * Slova ve dvojitých složených závorkách se zvýrazní barvou spolku, např. „Náš {{tým}}“.
+     */
+    headline?: string | null;
+    text?: string | null;
+    /**
+     * Odkaz, který posune stránku dolů na část Historie. Prázdné = odkaz se nezobrazí.
+     */
+    storyLinkLabel?: string | null;
+  };
+  features?: {
+    /**
+     * Pořadí změníte přetažením. Nejlépe vypadají 3 karty (nebo násobky 3). Bez karet se blok skryje.
+     */
+    items?:
+      | {
+          title: string;
+          /**
+           * Anglický název ikony ze sady Material Symbols, malými písmeny a s podtržítky (např. groups, celebration, school, photo_camera, mail). Všechny ikony najdete na https://fonts.google.com/icons – klikněte na ikonu a zkopírujte její název.
+           */
+          icon: string;
+          description?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  history?: {
+    /**
+     * Slova ve dvojitých složených závorkách se zvýrazní barvou spolku, např. „Náš {{tým}}“.
+     */
+    heading?: string | null;
+    /**
+     * Zobrazují se v tomto pořadí shora dolů (pořadí změníte přetažením). Bez milníků se blok skryje.
+     */
+    items?:
+      | {
+          /**
+           * Např. 2010 nebo „Dnes“.
+           */
+          year: string;
+          title: string;
+          description?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  team?: {
+    /**
+     * Slova ve dvojitých složených závorkách se zvýrazní barvou spolku, např. „Náš {{tým}}“.
+     */
+    heading?: string | null;
+    description?: string | null;
+  };
+  cta?: {
+    heading?: string | null;
+    text?: string | null;
+    /**
+     * Prázdné = tlačítko se nezobrazí.
+     */
+    primaryLabel?: string | null;
+    /**
+     * Např. odkaz na přihlášku. Hodnota # znamená, že tlačítko nikam nevede. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+     */
+    primaryLink?: string | null;
+    /**
+     * Prázdné = tlačítko se nezobrazí.
+     */
+    secondaryLabel?: string | null;
+    /**
+     * Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+     */
+    secondaryLink?: string | null;
+  };
+  seo?: {
+    /**
+     * Zobrazuje se v záložce prohlížeče, ve výsledcích Googlu a při sdílení odkazu. Ideálně do 60 znaků. Když necháte prázdné, použije se výchozí titulek z Nastavení webu.
+     */
+    title?: string | null;
+    /**
+     * Krátké shrnutí stránky (1–2 věty, ideálně do 160 znaků) pro Google a náhled při sdílení na sociálních sítích. Když necháte prázdné, použije se výchozí popis z Nastavení webu.
+     */
+    description?: string | null;
+    /**
+     * Obrázek, který se ukáže při sdílení odkazu (Facebook, WhatsApp, Messenger…). Ideální rozměr 1200 × 630 px. Když necháte prázdné, použije se výchozí obrázek z Nastavení webu.
+     */
+    image?: (number | null) | Media;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Texty stránky s měsíčním kalendářem (/calendar). Samotné akce spravujete v sekci Kalendář → Akce.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "calendar-page".
+ */
+export interface CalendarPage {
+  id: number;
+  texts?: {
+    /**
+     * Za text se automaticky doplní akademický rok, např. „Akademický rok 2026/27“.
+     */
+    academicYearLabel?: string | null;
+    registerButtonLabel?: string | null;
+    /**
+     * Použije se u akcí, které nemají vlastní „Odkaz na registraci“. Když necháte prázdné, tlačítko se u takových akcí nezobrazí. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
+     */
+    defaultRegistrationUrl?: string | null;
+    selectDayText?: string | null;
+    /**
+     * Místo {datum} se doplní vybraný den, např. „12. Listopad“.
+     */
+    noEventsText?: string | null;
+  };
+  seo?: {
+    /**
+     * Zobrazuje se v záložce prohlížeče, ve výsledcích Googlu a při sdílení odkazu. Ideálně do 60 znaků. Když necháte prázdné, použije se výchozí titulek z Nastavení webu.
+     */
+    title?: string | null;
+    /**
+     * Krátké shrnutí stránky (1–2 věty, ideálně do 160 znaků) pro Google a náhled při sdílení na sociálních sítích. Když necháte prázdné, použije se výchozí popis z Nastavení webu.
+     */
+    description?: string | null;
+    /**
+     * Obrázek, který se ukáže při sdílení odkazu (Facebook, WhatsApp, Messenger…). Ideální rozměr 1200 × 630 px. Když necháte prázdné, použije se výchozí obrázek z Nastavení webu.
+     */
+    image?: (number | null) | Media;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Společná nastavení celého webu: název a logo, výchozí texty pro Google a sdílení a stránka „nenalezeno“. Horní menu a patičku upravíte v Obsah webu → Hlavní stránka (záložky Menu a Patička).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings".
+ */
+export interface SiteSetting {
+  id: number;
+  /**
+   * Zobrazuje se vedle loga v menu a v patičce a jako název webu při sdílení odkazů.
+   */
+  siteName?: string | null;
+  /**
+   * Malé logo v menu a patičce (ideálně čtvercové SVG nebo PNG s průhledným pozadím). Když necháte prázdné, použije se současné logo SPPDF.
+   */
+  logo?: (number | null) | Media;
+  /**
+   * Čtvercový obrázek (PNG nebo SVG, alespoň 64 × 64 px). Když necháte prázdné, použije se logo SPPDF.
+   */
+  favicon?: (number | null) | Media;
+  seo?: {
+    /**
+     * Titulek v záložce prohlížeče a ve výsledcích Googlu.
+     */
+    defaultTitle?: string | null;
+    /**
+     * Krátké shrnutí webu pro Google a náhled při sdílení (do 160 znaků).
+     */
+    defaultDescription?: string | null;
+    /**
+     * Obrázek v náhledu odkazu na Facebooku, WhatsAppu apod. Ideální rozměr 1200 × 630 px.
+     */
+    ogImage?: (number | null) | Media;
+  };
+  notFound?: {
+    heading?: string | null;
+    text?: string | null;
+    buttonLabel?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header".
  */
@@ -1810,96 +2223,6 @@ export interface Footer {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "landing-page".
- */
-export interface LandingPage {
-  id: number;
-  nav?: {
-    links?:
-      | {
-          label: string;
-          url: string;
-          id?: string | null;
-        }[]
-      | null;
-    ctaLabel?: string | null;
-    ctaLink?: string | null;
-  };
-  hero: {
-    badge?: string | null;
-    /**
-     * Use {{text}} to wrap words in the primary color. E.g. "Inspirujeme {{budoucí}} učitele."
-     */
-    headline: string;
-    subtitle?: string | null;
-    ctaPrimary?: {
-      label?: string | null;
-      link?: string | null;
-    };
-    ctaSecondary?: {
-      label?: string | null;
-      link?: string | null;
-    };
-    image?: (number | null) | Media;
-  };
-  ribbon?: {
-    items?:
-      | {
-          text: string;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  divisions?: {
-    heading?: string | null;
-    description?: string | null;
-    items?:
-      | {
-          /**
-           * Material Symbol name, e.g. "devices"
-           */
-          icon: string;
-          title: string;
-          description?: string | null;
-          image?: (number | null) | Media;
-          linkLabel?: string | null;
-          linkUrl?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-  };
-  footer?: {
-    description?: string | null;
-    socialLinks?:
-      | {
-          /**
-           * Material Symbol name
-           */
-          icon: string;
-          url: string;
-          id?: string | null;
-        }[]
-      | null;
-    linkColumns?:
-      | {
-          heading: string;
-          links?:
-            | {
-                label: string;
-                url: string;
-                id?: string | null;
-              }[]
-            | null;
-          id?: string | null;
-        }[]
-      | null;
-    copyright?: string | null;
-  };
-  updatedAt?: string | null;
-  createdAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-jobs-stats".
  */
 export interface PayloadJobsStat {
@@ -1915,6 +2238,238 @@ export interface PayloadJobsStat {
     | null;
   updatedAt?: string | null;
   createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "landing-page_select".
+ */
+export interface LandingPageSelect<T extends boolean = true> {
+  hero?:
+    | T
+    | {
+        badge?: T;
+        headline?: T;
+        subtitle?: T;
+        ctaPrimary?:
+          | T
+          | {
+              label?: T;
+              link?: T;
+            };
+        ctaSecondary?:
+          | T
+          | {
+              label?: T;
+              link?: T;
+            };
+        image?: T;
+      };
+  ribbon?:
+    | T
+    | {
+        items?:
+          | T
+          | {
+              text?: T;
+              id?: T;
+            };
+      };
+  calendarSection?:
+    | T
+    | {
+        heading?: T;
+        description?: T;
+        endCardTitle?: T;
+        endCardText?: T;
+        ctaHeading?: T;
+        ctaText?: T;
+        ctaButtonLabel?: T;
+        ctaButtonLink?: T;
+      };
+  divisions?:
+    | T
+    | {
+        heading?: T;
+        description?: T;
+        items?:
+          | T
+          | {
+              title?: T;
+              icon?: T;
+              description?: T;
+              image?: T;
+              linkLabel?: T;
+              linkUrl?: T;
+              id?: T;
+            };
+      };
+  nav?:
+    | T
+    | {
+        links?:
+          | T
+          | {
+              label?: T;
+              url?: T;
+              id?: T;
+            };
+        ctaLabel?: T;
+        ctaLink?: T;
+      };
+  footer?:
+    | T
+    | {
+        description?: T;
+        socialLinks?:
+          | T
+          | {
+              label?: T;
+              icon?: T;
+              url?: T;
+              id?: T;
+            };
+        linkColumns?:
+          | T
+          | {
+              heading?: T;
+              links?:
+                | T
+                | {
+                    label?: T;
+                    url?: T;
+                    id?: T;
+                  };
+              id?: T;
+            };
+        copyright?: T;
+        credit?: T;
+      };
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "about-page_select".
+ */
+export interface AboutPageSelect<T extends boolean = true> {
+  intro?:
+    | T
+    | {
+        badge?: T;
+        headline?: T;
+        text?: T;
+        storyLinkLabel?: T;
+      };
+  features?:
+    | T
+    | {
+        items?:
+          | T
+          | {
+              title?: T;
+              icon?: T;
+              description?: T;
+              id?: T;
+            };
+      };
+  history?:
+    | T
+    | {
+        heading?: T;
+        items?:
+          | T
+          | {
+              year?: T;
+              title?: T;
+              description?: T;
+              id?: T;
+            };
+      };
+  team?:
+    | T
+    | {
+        heading?: T;
+        description?: T;
+      };
+  cta?:
+    | T
+    | {
+        heading?: T;
+        text?: T;
+        primaryLabel?: T;
+        primaryLink?: T;
+        secondaryLabel?: T;
+        secondaryLink?: T;
+      };
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "calendar-page_select".
+ */
+export interface CalendarPageSelect<T extends boolean = true> {
+  texts?:
+    | T
+    | {
+        academicYearLabel?: T;
+        registerButtonLabel?: T;
+        defaultRegistrationUrl?: T;
+        selectDayText?: T;
+        noEventsText?: T;
+      };
+  seo?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  siteName?: T;
+  logo?: T;
+  favicon?: T;
+  seo?:
+    | T
+    | {
+        defaultTitle?: T;
+        defaultDescription?: T;
+        ogImage?: T;
+      };
+  notFound?:
+    | T
+    | {
+        heading?: T;
+        text?: T;
+        buttonLabel?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1964,101 +2519,6 @@ export interface FooterSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "landing-page_select".
- */
-export interface LandingPageSelect<T extends boolean = true> {
-  nav?:
-    | T
-    | {
-        links?:
-          | T
-          | {
-              label?: T;
-              url?: T;
-              id?: T;
-            };
-        ctaLabel?: T;
-        ctaLink?: T;
-      };
-  hero?:
-    | T
-    | {
-        badge?: T;
-        headline?: T;
-        subtitle?: T;
-        ctaPrimary?:
-          | T
-          | {
-              label?: T;
-              link?: T;
-            };
-        ctaSecondary?:
-          | T
-          | {
-              label?: T;
-              link?: T;
-            };
-        image?: T;
-      };
-  ribbon?:
-    | T
-    | {
-        items?:
-          | T
-          | {
-              text?: T;
-              id?: T;
-            };
-      };
-  divisions?:
-    | T
-    | {
-        heading?: T;
-        description?: T;
-        items?:
-          | T
-          | {
-              icon?: T;
-              title?: T;
-              description?: T;
-              image?: T;
-              linkLabel?: T;
-              linkUrl?: T;
-              id?: T;
-            };
-      };
-  footer?:
-    | T
-    | {
-        description?: T;
-        socialLinks?:
-          | T
-          | {
-              icon?: T;
-              url?: T;
-              id?: T;
-            };
-        linkColumns?:
-          | T
-          | {
-              heading?: T;
-              links?:
-                | T
-                | {
-                    label?: T;
-                    url?: T;
-                    id?: T;
-                  };
-              id?: T;
-            };
-        copyright?: T;
-      };
-  updatedAt?: T;
-  createdAt?: T;
-  globalType?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-jobs-stats_select".
  */
 export interface PayloadJobsStatsSelect<T extends boolean = true> {
@@ -2099,16 +2559,16 @@ export interface TaskSchedulePublish {
     locale?: string | null;
     doc?:
       | ({
+          relationTo: 'events';
+          value: number | Event;
+        } | null)
+      | ({
           relationTo: 'pages';
           value: number | Page;
         } | null)
       | ({
           relationTo: 'posts';
           value: number | Post;
-        } | null)
-      | ({
-          relationTo: 'events';
-          value: number | Event;
         } | null);
     global?: string | null;
     user?: (number | null) | User;

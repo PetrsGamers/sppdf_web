@@ -1,11 +1,19 @@
+import type { Metadata } from 'next'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 
+import { getGlobal } from '../_lib/getGlobal'
+import { buildPageMetadata } from '../_lib/metadata'
 import { CalendarView } from './_components/CalendarView'
 
 // Re-render at most every 5 minutes so events synced from Google Calendar appear
 // without a redeploy (revalidatePath can't be called from the background sync job).
 export const revalidate = 300
+
+export async function generateMetadata(): Promise<Metadata> {
+  const calendarPage = await getGlobal('calendar-page')
+  return buildPageMetadata(calendarPage.seo, '/calendar')
+}
 
 export default async function CalendarPage() {
   const payload = await getPayload({ config: configPromise })
@@ -24,5 +32,7 @@ export default async function CalendarPage() {
     pagination: false,
   })
 
-  return <CalendarView events={eventsData.docs} />
+  const calendarPage = await getGlobal('calendar-page')
+
+  return <CalendarView events={eventsData.docs} texts={calendarPage.texts} />
 }

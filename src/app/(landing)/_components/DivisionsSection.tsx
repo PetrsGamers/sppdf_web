@@ -2,16 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { LandingPage, Media } from '@/payload-types'
+import { landingDefaults } from '@/LandingPage/defaults'
+
+const D = landingDefaults.divisions
 
 type Props = {
   divisions: LandingPage['divisions']
 }
 
 export function DivisionsSection({ divisions }: Props) {
-  const heading = divisions?.heading ?? 'Sekce našeho spolku'
-  const description =
-    divisions?.description ??
-    'Vyberte si oblast, která vás zajímá, a staňte se součástí týmu SPPDF.'
+  const heading = divisions?.heading ?? D.heading
+  const description = divisions?.description ?? D.description
   const items = divisions?.items ?? []
   const count = items.length
 
@@ -51,14 +52,16 @@ export function DivisionsSection({ divisions }: Props) {
 
   if (count === 0) return null
 
-  const renderCard = (slide: (typeof items)[number], i: number) => {
-    const slideImage = slide.image as Media | undefined
+  const renderCard = (slide: (typeof items)[number]) => {
+    const slideImage = typeof slide.image === 'object' ? (slide.image as Media | null) : null
     const slideImageUrl = slideImage?.url
+    const linkLabel = slide.linkLabel ?? D.linkLabel
     return (
       <div className="bg-white rounded-[2.5rem] p-10 flex flex-col gap-8 shadow-sm border border-stone-100">
         <div className="w-full flex flex-col justify-center">
           <div className="inline-block p-4 bg-primary/10 rounded-2xl mb-6 w-fit">
             <span
+              aria-hidden="true"
               className="material-symbols-outlined text-primary text-4xl"
               style={{ fontVariationSettings: "'FILL' 1" }}
             >
@@ -73,18 +76,22 @@ export function DivisionsSection({ divisions }: Props) {
               {slide.description}
             </p>
           )}
-          <a
-            href={slide.linkUrl ?? '#'}
-            className="text-primary font-bold font-headline flex items-center gap-2 hover:gap-4 transition-all"
-          >
-            {slide.linkLabel ?? 'Zjistit více'}
-            <span className="material-symbols-outlined">arrow_right_alt</span>
-          </a>
+          {linkLabel && (
+            <a
+              href={slide.linkUrl || D.linkUrl}
+              className="text-primary font-bold font-headline flex items-center gap-2 hover:gap-4 transition-all"
+            >
+              {linkLabel}
+              <span aria-hidden="true" className="material-symbols-outlined">
+                arrow_right_alt
+              </span>
+            </a>
+          )}
         </div>
         <div className="w-full flex items-center">
           {slideImageUrl ? (
             <img
-              alt={slide.title}
+              alt={slideImage?.alt || slide.title}
               className="w-full h-64 object-cover rounded-3xl"
               src={slideImageUrl}
             />
@@ -107,7 +114,9 @@ export function DivisionsSection({ divisions }: Props) {
           <h2 className="text-4xl md:text-5xl font-black font-headline tracking-tight mb-4">
             {heading}
           </h2>
-          <p className="text-lg text-on-surface-variant max-w-2xl mx-auto">{description}</p>
+          {description && (
+            <p className="text-lg text-on-surface-variant max-w-2xl mx-auto">{description}</p>
+          )}
         </div>
 
         {/* Desktop: 2-column carousel */}
@@ -124,7 +133,7 @@ export function DivisionsSection({ divisions }: Props) {
                     <div className="grid grid-cols-2 gap-10">
                       {items.slice(pageIdx * 2, pageIdx * 2 + 2).map((slide, i) => (
                         <div key={slide.id ?? pageIdx * 2 + i}>
-                          {renderCard(slide, pageIdx * 2 + i)}
+                          {renderCard(slide)}
                         </div>
                       ))}
                     </div>
@@ -138,14 +147,14 @@ export function DivisionsSection({ divisions }: Props) {
                 <button
                   onClick={prevDesktop}
                   className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-stone-50 transition-colors border border-stone-100"
-                  aria-label="Previous division"
+                  aria-label="Předchozí sekce"
                 >
                   <span className="material-symbols-outlined text-on-surface">chevron_left</span>
                 </button>
                 <button
                   onClick={nextDesktop}
                   className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-stone-50 transition-colors border border-stone-100"
-                  aria-label="Next division"
+                  aria-label="Další sekce"
                 >
                   <span className="material-symbols-outlined text-on-surface">chevron_right</span>
                 </button>
@@ -164,7 +173,7 @@ export function DivisionsSection({ divisions }: Props) {
                       ? 'bg-primary w-8'
                       : 'bg-stone-300 hover:bg-stone-400'
                   }`}
-                  aria-label={`Go to page ${i + 1}`}
+                  aria-label={`Přejít na stranu ${i + 1}`}
                 />
               ))}
             </div>
@@ -181,7 +190,7 @@ export function DivisionsSection({ divisions }: Props) {
               >
                 {items.map((slide, i) => (
                   <div key={slide.id ?? i} className="w-full flex-shrink-0 px-1">
-                    {renderCard(slide, i)}
+                    {renderCard(slide)}
                   </div>
                 ))}
               </div>
@@ -192,14 +201,14 @@ export function DivisionsSection({ divisions }: Props) {
                 <button
                   onClick={prevMobile}
                   className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-stone-50 transition-colors border border-stone-100"
-                  aria-label="Previous division"
+                  aria-label="Předchozí sekce"
                 >
                   <span className="material-symbols-outlined text-on-surface">chevron_left</span>
                 </button>
                 <button
                   onClick={nextMobile}
                   className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-stone-50 transition-colors border border-stone-100"
-                  aria-label="Next division"
+                  aria-label="Další sekce"
                 >
                   <span className="material-symbols-outlined text-on-surface">chevron_right</span>
                 </button>
@@ -218,7 +227,7 @@ export function DivisionsSection({ divisions }: Props) {
                       ? 'bg-primary w-8'
                       : 'bg-stone-300 hover:bg-stone-400'
                   }`}
-                  aria-label={`Go to division ${i + 1}`}
+                  aria-label={`Přejít na sekci ${i + 1}`}
                 />
               ))}
             </div>

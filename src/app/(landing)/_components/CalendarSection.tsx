@@ -2,11 +2,15 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import type { Event } from '@/payload-types'
+import type { Event, LandingPage } from '@/payload-types'
+import { landingDefaults } from '@/LandingPage/defaults'
 
 type Props = {
   events: Event[]
+  texts?: LandingPage['calendarSection']
 }
+
+const D = landingDefaults.calendarSection
 
 const categoryColorMap: Record<string, string> = {
   orange: 'bg-orange-50 text-primary',
@@ -35,7 +39,16 @@ function getInitialPage(events: Event[], pageSize: number): number {
   return idx >= 0 ? Math.floor(idx / pageSize) : 0
 }
 
-export function CalendarSection({ events }: Props) {
+export function CalendarSection({ events, texts }: Props) {
+  const heading = texts?.heading ?? D.heading
+  const description = texts?.description ?? D.description
+  const endCardTitle = texts?.endCardTitle ?? D.endCardTitle
+  const endCardText = texts?.endCardText ?? D.endCardText
+  const ctaHeading = texts?.ctaHeading ?? D.ctaHeading
+  const ctaText = texts?.ctaText ?? D.ctaText
+  const ctaButtonLabel = texts?.ctaButtonLabel ?? D.ctaButtonLabel
+  const ctaButtonLink = texts?.ctaButtonLink || D.ctaButtonLink
+
   const pageSize = 3
   const items: Item[] = [...events, { id: 'end-card' }]
   const totalPages = Math.ceil(items.length / pageSize)
@@ -58,27 +71,30 @@ export function CalendarSection({ events }: Props) {
       <div className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="max-w-2xl">
           <h2 className="text-4xl md:text-5xl font-black font-headline tracking-tight mb-4 text-on-surface">
-            Kalendář událostí
+            {heading}
           </h2>
-          <p className="text-lg text-on-surface-variant">
-            Sledujte, co připravujeme na Pedagogické fakultě. Od neformálních setkání po odborné
-            přednášky.
-          </p>
+          {description && <p className="text-lg text-on-surface-variant">{description}</p>}
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => goToPage(Math.max(0, page - 1))}
             disabled={page === 0}
+            aria-label="Předchozí akce"
             className="p-3 bg-white border border-stone-200 rounded-full hover:bg-surface-container-high hover:border-transparent transition-all disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            <span className="material-symbols-outlined">chevron_left</span>
+            <span aria-hidden="true" className="material-symbols-outlined">
+              chevron_left
+            </span>
           </button>
           <button
             onClick={() => goToPage(Math.min(totalPages - 1, page + 1))}
             disabled={page >= totalPages - 1}
+            aria-label="Další akce"
             className="p-3 bg-white border border-stone-200 rounded-full hover:bg-surface-container-high hover:border-transparent transition-all disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            <span className="material-symbols-outlined">chevron_right</span>
+            <span aria-hidden="true" className="material-symbols-outlined">
+              chevron_right
+            </span>
           </button>
         </div>
       </div>
@@ -104,11 +120,9 @@ export function CalendarSection({ events }: Props) {
                 <h3
                   className={`text-xl font-black font-headline tracking-tighter mb-2 transition-colors duration-300 ${isActive ? 'text-primary' : 'text-on-surface'}`}
                 >
-                  Připravujeme pro vás další akce
+                  {endCardTitle}
                 </h3>
-                <p className="text-sm text-on-surface-variant">
-                  Těšíme se na vás příští semestr
-                </p>
+                {endCardText && <p className="text-sm text-on-surface-variant">{endCardText}</p>}
               </div>
             )
           }
@@ -181,19 +195,21 @@ export function CalendarSection({ events }: Props) {
         <div className="bg-stone-900 rounded-[2rem] p-8 flex flex-col md:flex-row items-center justify-between border border-stone-800 hover:bg-stone-950 transition-all">
           <div className="text-center md:text-left mb-6 md:mb-0">
             <h3 className="text-2xl md:text-3xl font-black text-white font-headline tracking-tighter">
-              Zajímá vás kompletní program?
+              {ctaHeading}
             </h3>
-            <p className="text-stone-400">
-              Podívejte se na všechny plánované akce v našem interaktivním kalendáři.
-            </p>
+            {ctaText && <p className="text-stone-400">{ctaText}</p>}
           </div>
-          <Link
-            href="/calendar"
-            className="inline-flex items-center gap-3 bg-white text-stone-900 px-8 py-4 rounded-xl font-headline font-extrabold text-lg hover:bg-primary hover:text-white transition-all active:scale-95"
-          >
-            Prohlédnout celý měsíc
-            <span className="material-symbols-outlined">calendar_month</span>
-          </Link>
+          {ctaButtonLabel && (
+            <Link
+              href={ctaButtonLink}
+              className="inline-flex items-center gap-3 bg-white text-stone-900 px-8 py-4 rounded-xl font-headline font-extrabold text-lg hover:bg-primary hover:text-white transition-all active:scale-95"
+            >
+              {ctaButtonLabel}
+              <span aria-hidden="true" className="material-symbols-outlined">
+                calendar_month
+              </span>
+            </Link>
+          )}
         </div>
       </div>
     </section>
