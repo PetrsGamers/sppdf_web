@@ -1,4 +1,6 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { cs } from '@payloadcms/translations/languages/cs'
+import { en } from '@payloadcms/translations/languages/en'
 import path from 'path'
 import { buildConfig, PayloadRequest } from 'payload'
 import sharp from 'sharp'
@@ -50,12 +52,13 @@ const getDeploymentIdentity = (): { source: string; value: string } | null => {
 export default buildConfig({
   admin: {
     components: {
-      // The `BeforeLogin` component renders a message that you see while logging into your admin panel.
-      // Feel free to delete this at any time. Simply remove the line below.
+      // Czech welcome text on the login screen.
       beforeLogin: ['@/components/BeforeLogin'],
-      // The `BeforeDashboard` component renders the 'welcome' block that you see after logging into your admin panel.
-      // Feel free to delete this at any time. Simply remove the line below.
+      // Czech "how to edit the website" guide above the dashboard.
       beforeDashboard: ['@/components/BeforeDashboard'],
+    },
+    meta: {
+      titleSuffix: ' – administrace SPPDF',
     },
     importMap: {
       baseDir: path.resolve(dirname),
@@ -93,9 +96,17 @@ export default buildConfig({
     push: false, // Don't auto-push schema changes
     migrationDir: './migrations',
   }),
-  collections: [Pages, Posts, Events, Media, Categories, Users, TeamMembers],
+  // Order matters: it is the order of groups and items in the admin sidebar.
+  // Pages, Posts, Categories, Header and Footer are unused template leftovers (hidden in admin,
+  // see src/utilities/templateAdmin.ts) – kept registered so their DB tables stay untouched.
+  collections: [TeamMembers, Media, Events, Users, Pages, Posts, Categories],
   cors: [getServerSideURL()].filter(Boolean),
-  globals: [Header, Footer, LandingPage, AboutPage, CalendarPage, SiteSettings],
+  globals: [LandingPage, AboutPage, CalendarPage, SiteSettings, Header, Footer],
+  i18n: {
+    // Admin UI in Czech; editors can switch to English in their account settings.
+    supportedLanguages: { cs, en },
+    fallbackLanguage: 'cs',
+  },
   plugins,
   secret: process.env.PAYLOAD_SECRET,
   sharp,

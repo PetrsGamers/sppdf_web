@@ -1,6 +1,7 @@
 import type { GlobalConfig } from 'payload'
 
 import { link } from '@/fields/link'
+import { templateAdmin } from '@/utilities/templateAdmin'
 import { revalidateFooter } from './hooks/revalidateFooter'
 
 export const Footer: GlobalConfig = {
@@ -8,6 +9,7 @@ export const Footer: GlobalConfig = {
   access: {
     read: () => true,
   },
+  admin: templateAdmin,
   fields: [
     {
       name: 'navItems',

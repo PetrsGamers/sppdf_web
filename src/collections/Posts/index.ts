@@ -26,6 +26,7 @@ import {
   PreviewField,
 } from '@payloadcms/plugin-seo/fields'
 import { slugField } from 'payload'
+import { templateAdmin } from '@/utilities/templateAdmin'
 
 export const Posts: CollectionConfig<'posts'> = {
   slug: 'posts',
@@ -48,6 +49,7 @@ export const Posts: CollectionConfig<'posts'> = {
     },
   },
   admin: {
+    ...templateAdmin,
     defaultColumns: ['title', 'slug', 'updatedAt'],
     livePreview: {
       url: ({ data, req }) =>
