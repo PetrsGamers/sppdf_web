@@ -64,6 +64,17 @@ export const CalendarPage: GlobalConfig = {
                   ],
                 },
                 {
+                  name: 'facebookButtonLabel',
+                  type: 'text',
+                  label: 'Text tlačítka na Událost na Facebooku',
+                  defaultValue: D.texts.facebookButtonLabel,
+                  admin: {
+                    description:
+                      'U akcí načtených z Facebooku vede na jejich Událost, kde se lidé můžou přihlásit jako účastníci. ' +
+                      'Když necháte prázdné, tlačítko se nezobrazí.',
+                  },
+                },
+                {
                   name: 'selectDayText',
                   type: 'text',
                   label: 'Text, když není vybraný den',

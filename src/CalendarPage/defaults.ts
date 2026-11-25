@@ -3,6 +3,7 @@ export const calendarDefaults = {
   texts: {
     academicYearLabel: 'Akademický rok',
     registerButtonLabel: 'Registrovat se',
+    facebookButtonLabel: 'Zúčastním se',
     defaultRegistrationUrl: '',
     selectDayText: 'Vyberte den v kalendáři pro zobrazení událostí.',
     noEventsText: 'Na {datum} nejsou plánovány žádné události.',
