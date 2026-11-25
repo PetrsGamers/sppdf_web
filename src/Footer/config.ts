@@ -1,5 +1,7 @@
 import type { GlobalConfig } from 'payload'
 
+import { authenticated } from '@/access/authenticated'
+
 import { link } from '@/fields/link'
 import { templateAdmin } from '@/utilities/templateAdmin'
 import { revalidateFooter } from './hooks/revalidateFooter'
@@ -7,7 +9,7 @@ import { revalidateFooter } from './hooks/revalidateFooter'
 export const Footer: GlobalConfig = {
   slug: 'footer',
   access: {
-    read: () => true,
+    read: authenticated,
   },
   admin: templateAdmin,
   fields: [

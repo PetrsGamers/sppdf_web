@@ -14,8 +14,8 @@ The project is a fork of the [Payload "website" template](https://github.com/pay
 
 | Area          | Technology                                                                           |
 | ------------- | ------------------------------------------------------------------------------------ |
-| CMS           | [Payload](https://payloadcms.com) 3.79.1 (admin panel, REST/GraphQL API, jobs queue) |
-| Framework     | Next.js 15.4 (App Router), React 19                                                  |
+| CMS           | [Payload](https://payloadcms.com) 3.93 (admin panel, REST/GraphQL API, jobs queue)   |
+| Framework     | Next.js 16 (App Router, Turbopack), React 19                                         |
 | Database      | PostgreSQL via `@payloadcms/db-postgres`                                             |
 | Styling       | Tailwind CSS 4                                                                       |
 | Rich text     | Lexical (`@payloadcms/richtext-lexical`)                                             |
@@ -28,14 +28,15 @@ The project is a fork of the [Payload "website" template](https://github.com/pay
 src/
 ├── app/
 │   ├── (landing)/              # THE PUBLIC SITE
-│   │   ├── layout.tsx          # nav + footer, reads the LandingPage global
+│   │   ├── layout.tsx          # SiteShell (fonts, nav, footer) + default metadata
 │   │   ├── page.tsx            # /          hero, ribbon, event carousel, divisions
 │   │   ├── aboutus/page.tsx    # /aboutus   team (TeamMembers collection)
 │   │   ├── calendar/           # /calendar  month calendar (Events collection)
-│   │   ├── _components/        # LandingHero, LandingNav, CalendarSection, ...
+│   │   ├── _components/        # SiteShell, NotFoundContent, LandingHero, LandingNav, ...
 │   │   └── landing.css
 │   ├── (payload)/              # Payload admin (/admin) and API (/api/*)
-│   └── (frontend)/             # template leftovers: /[slug], /posts, /search, sitemaps, preview
+│   ├── (frontend)/             # template leftovers: /[slug], /posts, /search, sitemaps, preview
+│   └── global-not-found.tsx    # styled 404 for URLs that match no route
 ├── LandingPage/                # LandingPage global (config + revalidation hook)
 ├── collections/
 │   ├── Events/                 # events shown on / and /calendar
@@ -61,8 +62,9 @@ Still in the codebase from the template, but not part of the SPPDF site:
 
 - the `(frontend)` routes: `/[slug]`, `/posts`, `/search`, `/next/preview`, `pages-sitemap.xml`, `posts-sitemap.xml`;
 - the `Pages`, `Posts` and `Categories` collections and the `Header` and `Footer` globals;
-- the form-builder, search, SEO, redirects and nested-docs plugins (`src/plugins/index.ts`);
-- the "Seed your database" button on the admin dashboard (`src/components/BeforeDashboard`). **Do not press it on a real database.** It deletes all pages, posts, media, categories, forms and search records, and it creates a `demo-author@example.com` user whose password is `password`.
+- the form-builder, search, SEO, redirects and nested-docs plugins (`src/plugins/index.ts`).
+
+Their API is closed to anonymous visitors (`templateAccess` in `src/utilities/templateAdmin.ts`), and the `(frontend)` group renders the site's own shell, so its 404 page looks like the rest of the site.
 
 `AGENTS.md` contains general Payload coding guidelines for AI assistants. Its "Project Structure" section is generic and does not describe this repo.
 
@@ -71,17 +73,15 @@ Still in the codebase from the template, but not part of the SPPDF site:
 ### Prerequisites
 
 - **Node.js 22.23.4+ (or 24.22.1+).** Payload 3.93 requires it; `package.json` `engines` is `^22.23.4 || >=24.22.1`.
-- **npm.** The committed lockfile is `package-lock.json`, so use `npm ci` / `npm install`. A few `package.json` scripts and the Playwright config still call `pnpm` (see [Scripts](#scripts)). `.npmrc` sets `legacy-peer-deps=true`.
-- **PostgreSQL**, local or in Docker. For example:
-  ```bash
-  docker run -d --name sppdf-db -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=sppdf -p 5432:5432 postgres:16
-  ```
-  `docker-compose.yml` in the repo is the stale template file (MongoDB, Node 18, yarn). Don't use it.
+- **npm.** The committed lockfile is `package-lock.json`, so use `npm ci` / `npm install`. `.npmrc` sets `legacy-peer-deps=true`.
+- **PostgreSQL 18 in Docker:** `docker compose up -d` starts it on port 54320 (`docker-compose.yml`), matching `DATABASE_URL` in `.env.example`.
+  To work with real content, restore a production dump into it: `pg_restore --no-owner --no-privileges -d postgres://postgres@127.0.0.1:54320/sppdf <dump>`.
 
 ### First run
 
 ```bash
 npm ci
+docker compose up -d          # local Postgres
 cp .env.example .env          # then fill in the values (see below)
 npm run migrate               # create the tables (also runs automatically before `npm run build`)
 npm run dev                   # http://localhost:3000
@@ -95,7 +95,7 @@ Schema push is disabled (`push: false`), so `npm run dev` does **not** create ta
 
 | Variable                                                                                                                          | Required               | When                | Purpose                                                                                                                                                                                                                                                                                                                                                  |
 | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                                                                                                                    | yes                    | build + runtime     | Postgres connection string. The build needs it as well, because `next build` prerenders the landing pages from the database.                                                                                                                                                                                                                             |
+| `DATABASE_URL`                                                                                                                    | yes                    | build + runtime     | Postgres connection string. The build needs it as well, because `next build` prerenders the landing pages from the database. **Never point a local checkout at production:** `npm run build` migrates it, and the dev server's jobs cron processes its queue.                                                                                                                                                                                                                             |
 | `PAYLOAD_SECRET`                                                                                                                  | yes                    | build + runtime     | Payload's secret for signing auth tokens. Use a long random string. Changing it logs everyone out.                                                                                                                                                                                                                                                       |
 | `NEXT_PUBLIC_SERVER_URL`                                                                                                          | yes (prod)             | **build** + runtime | Public base URL with no trailing slash, e.g. `https://sppdfmuni.petrhybl.com`. Used for CORS, absolute URLs (SEO/OG, media) and `robots.txt`/`sitemap.xml`, which `next-sitemap` generates in `postbuild`. `NEXT_PUBLIC_*` values are inlined at build time. Server code falls back to `http://localhost:3000` and the sitemap to `https://example.com`. |
 | `GOOGLE_API_KEY`                                                                                                                  | yes, for calendar sync | runtime             | Google API key with the Google Calendar API enabled. Without it every sync run throws. The rest of the site works without it.                                                                                                                                                                                                                            |
@@ -154,7 +154,7 @@ The admin is in Czech (each user can switch to English in their account settings
 | Page title, description and share image per page                 | tab **SEO a sdílení** in each page global                                                          |
 | Users                                                            | Nastavení → **Uživatelé**                                                                          |
 
-The template collections the site doesn't use (Pages, Posts, Categories, Redirects, Forms, Form submissions, Search, Header, Footer) are hidden from the admin but keep their data. Set `PAYLOAD_SHOW_TEMPLATE_COLLECTIONS=true` to show them.
+The template collections the site doesn't use (Pages, Posts, Categories, Redirects, Forms, Form submissions, Search, Header, Footer) are hidden from the admin but keep their data, and only logged-in users can read them through the API. Set `PAYLOAD_SHOW_TEMPLATE_COLLECTIONS=true` to show them.
 
 Notes:
 
@@ -214,7 +214,8 @@ After a sync, the public pages still need to be re-rendered. See [Troubleshootin
 
 The app runs as a long-running Node server (`npm run build` → `npm start`, port 3000) next to a Postgres database.
 
-- **Build pack.** The `Dockerfile` in the repo is the stock Next.js example. It copies `.next/standalone`, but `next.config.js` does not set `output: 'standalone'`, and the Dockerfile does not pass any build-time env vars. It does not work as-is. Use Coolify's Nixpacks (Node) build pack, which uses `package-lock.json`, `npm run build` and `npm start`. Nixpacks reads the Node version from `engines`; you can also pin it with `NIXPACKS_NODE_VERSION=22`.
+- **Build pack.** Coolify's Nixpacks (Node) build pack, which uses `package-lock.json`, `npm run build` and `npm start`. There is no Dockerfile. Nixpacks reads the Node version from `engines`; you can also pin it with `NIXPACKS_NODE_VERSION=22`.
+- **Security headers.** `next.config.js` sets HSTS, `X-Content-Type-Options`, `Referrer-Policy` and `X-Frame-Options: SAMEORIGIN` (not `DENY`, because the admin's live preview frames the site), and turns off `x-powered-by`.
 - **Build-time variables.** `DATABASE_URL`, `PAYLOAD_SECRET` and `NEXT_PUBLIC_SERVER_URL` must be available to the **build** (mark them "Build Variable" in Coolify). The build prerenders `/`, `/aboutus` and `/calendar` from the database, and the `postbuild` step generates the sitemap and robots.txt from `NEXT_PUBLIC_SERVER_URL`. The database must therefore be reachable from the build.
 - **Runtime variables.** All of the above, plus `GOOGLE_API_KEY`, and optionally `CRON_SECRET`, `PREVIEW_SECRET` and `DEPLOYMENT_ID`.
 - **Migrations.** `npm run build` runs pending migrations first (`prebuild`), so the build needs `DATABASE_URL` and network access to the database. Changes are applied before the new container serves traffic; keep migrations additive so the old container keeps working during the switch.
@@ -230,22 +231,24 @@ Run with `npm run <script>`.
 | `dev`                                 | Next.js dev server on :3000                                                                           |
 | `build`                               | Production build (4 GB heap); `postbuild` runs `next-sitemap`                                         |
 | `start`                               | Serve the production build                                                                            |
-| `lint` / `lint:fix`                   | ESLint via `next lint`                                                                                |
+| `lint` / `lint:fix`                   | ESLint on `src` (flat config from `eslint-config-next`)                                               |
 | `generate:types`                      | Regenerate `src/payload-types.ts` after schema changes                                                |
 | `generate:importmap`                  | Regenerate the admin import map after adding or changing admin components                             |
 | `payload <cmd>`                       | Payload CLI: `migrate*`, `jobs:run`, `run <script>`, ...                                              |
 | `test:int`                            | Vitest integration tests (`tests/int`)                                                                |
 | `test:e2e`                            | Playwright tests (`tests/e2e`)                                                                        |
-| `test`, `dev:prod`, `ii`, `reinstall` | Template scripts that call `pnpm`. They fail without pnpm installed and don't match the npm lockfile. |
+| `test`                                | Both test suites                                                                                      |
+| `dev:prod`                            | Clean production build, then serve it locally                                                         |
+| `reinstall`                           | Delete `node_modules` and run `npm ci`                                                                |
 
 ## Testing
 
 - **Integration (Vitest).** `npm run test:int` runs `tests/int/**/*.int.spec.ts` in jsdom and loads `.env`. It boots Payload against `DATABASE_URL`, which therefore must point to a migrated database. Use a local/dev DB, not production.
 - **E2E (Playwright).** `npm run test:e2e`. The config's `webServer` command is `npm run dev` with `reuseExistingServer: true`, so an already running server on port 3000 is reused. Run `npx playwright install chromium` once.
   - `admin.e2e.spec.ts` seeds and removes a `dev@payloadcms.com` test user, so run it against a dev database.
-  - `frontend.e2e.spec.ts` is still the template test. It expects the title "Payload Website Template" on `/`, so it currently fails against the SPPDF landing page.
+  - `frontend.e2e.spec.ts` checks the public pages, the 404 page, the mobile menu, the security headers and the sitemap.
 
-`npm test` runs both suites, but via `pnpm`.
+`npm test` runs both suites.
 
 ## Troubleshooting
 

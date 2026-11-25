@@ -68,3 +68,20 @@
 .carousel-track {
   transition: transform 500ms ease-in-out;
 }
+
+/* Same rules as the Google Fonts stylesheet this replaces; unlayered like it was. */
+.material-symbols-outlined {
+  font-family: var(--font-material-symbols);
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
