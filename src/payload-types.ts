@@ -1906,7 +1906,7 @@ export interface LandingPage {
   footer?: {
     description?: string | null;
     /**
-     * Kulaté ikonky s odkazy (Instagram, Facebook, e-mail…). Pokud seznam necháte prázdný, zobrazí se dvě ukázkové ikonky bez odkazu.
+     * Kulaté ikonky s odkazy v patičce a v menu (Instagram, Facebook, e-mail…). Odkazy na Facebook a Instagram dostanou jejich logo automaticky. Pokud seznam necháte prázdný, zobrazí se Facebook a Instagram spolku.
      */
     socialLinks?:
       | {

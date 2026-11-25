@@ -6,14 +6,17 @@ import Link from 'next/link'
 import type { LandingPage } from '@/payload-types'
 import { landingDefaults as D } from '@/LandingPage/defaults'
 
+import type { SocialLink } from '../_lib/socialLinks'
 import type { Brand } from './LandingFooter'
+import { isExternal, SocialIcon } from './SocialIcon'
 
 type Props = {
   nav: LandingPage['nav']
   brand: Brand
+  socialLinks: SocialLink[]
 }
 
-export function LandingNav({ nav, brand }: Props) {
+export function LandingNav({ nav, brand, socialLinks }: Props) {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
   const links: { id?: string | null; label: string; url: string }[] =
@@ -51,6 +54,13 @@ export function LandingNav({ nav, brand }: Props) {
           })}
         </div>
         <div className="flex items-center gap-4">
+          {socialLinks.length > 0 && (
+            <div className="hidden lg:flex items-center gap-1">
+              {socialLinks.map((social, i) => (
+                <SocialLinkIcon key={social.id ?? i} social={social} />
+              ))}
+            </div>
+          )}
           {ctaLabel && (
             <a
               href={ctaLink}
@@ -94,6 +104,13 @@ export function LandingNav({ nav, brand }: Props) {
               )
             })}
           </ul>
+          {socialLinks.length > 0 && (
+            <div className="flex items-center gap-2 pb-4 -ml-2.5">
+              {socialLinks.map((social, i) => (
+                <SocialLinkIcon key={social.id ?? i} social={social} />
+              ))}
+            </div>
+          )}
           {ctaLabel && (
             <a
               href={ctaLink}
@@ -106,6 +123,19 @@ export function LandingNav({ nav, brand }: Props) {
         </div>
       )}
     </nav>
+  )
+}
+
+function SocialLinkIcon({ social }: { social: SocialLink }) {
+  return (
+    <a
+      aria-label={social.label || social.icon}
+      className="flex items-center justify-center h-10 w-10 rounded-full text-stone-600 hover:text-primary hover:bg-stone-100 transition-colors"
+      href={social.url}
+      {...(isExternal(social.url) && { target: '_blank', rel: 'noopener noreferrer' })}
+    >
+      <SocialIcon link={social} size={20} />
+    </a>
   )
 }
 

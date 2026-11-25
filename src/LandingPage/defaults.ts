@@ -58,8 +58,8 @@ export const landingDefaults = {
     description:
       'Spolek přátel pedagogické fakulty je nezávislá organizace propojující generace učitelů a studentů v srdci naší univerzity.',
     socialLinks: [
-      { icon: 'share', label: 'Sdílet', url: '#' },
-      { icon: 'photo_camera', label: 'Instagram', url: '#' },
+      { icon: 'groups', label: 'Facebook', url: 'https://www.facebook.com/sppdfmuni' },
+      { icon: 'photo_camera', label: 'Instagram', url: 'https://www.instagram.com/sppdf_muni/' },
     ],
     linkColumns: [
       {
