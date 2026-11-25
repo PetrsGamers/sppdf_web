@@ -8,6 +8,7 @@ import { aboutDefaults as D } from '@/AboutPage/defaults'
 import { renderHighlighted } from '../_components/highlight'
 import { getGlobal } from '../_lib/getGlobal'
 import { buildPageMetadata } from '../_lib/metadata'
+import { mediaSrcSet } from '../_lib/mediaSrcSet'
 
 export async function generateMetadata(): Promise<Metadata> {
   const about = await getGlobal('about-page')
@@ -221,6 +222,9 @@ export default async function AboutPage() {
                         alt={photo.alt || member.name}
                         className="w-28 h-28 rounded-full object-cover mx-auto mb-6 ring-4 ring-stone-100 group-hover:ring-primary/20 transition-all"
                         src={photo.url}
+                        srcSet={mediaSrcSet(photo)}
+                        sizes="112px"
+                        loading="lazy"
                       />
                     ) : (
                       <div className="w-28 h-28 rounded-full bg-surface-container-high mx-auto mb-6 flex items-center justify-center ring-4 ring-stone-100 group-hover:ring-primary/20 transition-all">

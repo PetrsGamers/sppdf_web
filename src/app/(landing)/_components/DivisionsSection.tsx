@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { LandingPage, Media } from '@/payload-types'
 import { landingDefaults } from '@/LandingPage/defaults'
+import { mediaSrcSet } from '../_lib/mediaSrcSet'
 
 const D = landingDefaults.divisions
 
@@ -94,6 +95,9 @@ export function DivisionsSection({ divisions }: Props) {
               alt={slideImage?.alt || slide.title}
               className="w-full h-64 object-cover rounded-3xl"
               src={slideImageUrl}
+              srcSet={mediaSrcSet(slideImage)}
+              sizes="(min-width: 768px) 50vw, 100vw"
+              loading="lazy"
             />
           ) : (
             <div className="w-full h-64 bg-stone-100 rounded-3xl" />

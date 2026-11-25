@@ -2,6 +2,7 @@ import type { LandingPage, Media } from '@/payload-types'
 import { landingDefaults as D } from '@/LandingPage/defaults'
 
 import { renderHighlighted } from './highlight'
+import { mediaSrcSet } from '../_lib/mediaSrcSet'
 
 type Props = {
   hero: LandingPage['hero']
@@ -73,6 +74,8 @@ export function LandingHero({ hero }: Props) {
             alt={imageAlt}
             className="relative z-10 w-full h-[500px] object-cover rounded-[2rem] shadow-2xl"
             src={imageUrl}
+            srcSet={mediaSrcSet(image)}
+            sizes="(min-width: 1024px) 50vw, 100vw"
           />
         </div>
       </div>
