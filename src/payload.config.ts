@@ -19,6 +19,7 @@ import { TeamMembers } from './collections/TeamMembers'
 import { Users } from './collections/Users'
 import { Footer } from './Footer/config'
 import { Header } from './Header/config'
+import { importFacebookEventsHandler } from './jobs/importFacebookEvents'
 import { syncGoogleCalendarHandler } from './jobs/syncGoogleCalendar'
 import { LandingPage } from './LandingPage/config'
 import { plugins } from './plugins'
@@ -152,6 +153,22 @@ export default buildConfig({
         },
         // Hourly; the autoRun below (every 5 min) picks up the queued job.
         schedule: [{ cron: '0 * * * *', queue: 'default' }],
+      },
+      {
+        slug: 'importFacebookEvents',
+        handler: importFacebookEventsHandler,
+        inputSchema: [],
+        outputSchema: [
+          { name: 'created', type: 'number' },
+          { name: 'updated', type: 'number' },
+          { name: 'linked', type: 'number' },
+        ],
+        retries: {
+          attempts: 2,
+          backoff: { type: 'exponential', delay: 60000 },
+        },
+        // Half past, so it runs after the Google Calendar sync and can link to its events.
+        schedule: [{ cron: '30 * * * *', queue: 'default' }],
       },
     ],
     deleteJobOnComplete: true,

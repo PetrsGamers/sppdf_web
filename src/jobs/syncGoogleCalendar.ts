@@ -1,7 +1,7 @@
 import type { TaskHandler } from 'payload'
 import { google, type calendar_v3 } from 'googleapis'
 
-function toSlug(text: string): string {
+export function toSlug(text: string): string {
   return text
     .toLowerCase()
     .normalize('NFD')
@@ -36,7 +36,7 @@ export function formatDuration(start: Date, end: Date, allDay: boolean): string 
 }
 
 const CALENDAR_ID = 'sppdfmuni@gmail.com'
-const TIME_ZONE = 'Europe/Prague'
+export const TIME_ZONE = 'Europe/Prague'
 
 /**
  * Fetches all upcoming events, following pagination so that the

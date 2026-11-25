@@ -139,6 +139,7 @@ export interface Config {
   jobs: {
     tasks: {
       syncGoogleCalendar: TaskSyncGoogleCalendar;
+      importFacebookEvents: TaskImportFacebookEvents;
       schedulePublish: TaskSchedulePublish;
       inline: {
         input: unknown;
@@ -318,7 +319,7 @@ export interface FolderInterface {
   createdAt: string;
 }
 /**
- * Akce zobrazené na hlavní stránce a v kalendáři (/calendar). Na webu se zobrazují jen publikované akce. Akce se každou hodinu automaticky načítají z Google Kalendáře spolku. U takto načtených akcí se název, datum, čas, délka, místo, popis i stav „publikováno“ při další synchronizaci přepíšou podle Google Kalendáře – měňte je proto přímo tam. Kategorii, barvu a odkaz na registraci můžete doplnit zde, ty synchronizace nepřepisuje. Akce, které mají v popisu v Google Kalendáři slovo „internal“, se na web nenačítají.
+ * Akce zobrazené na hlavní stránce a v kalendáři (/calendar). Na webu se zobrazují jen publikované akce. Akce se každou hodinu automaticky načítají z Google Kalendáře a z Událostí na Facebooku spolku. U takto načtených akcí se název, datum, čas, délka, místo, popis i stav „publikováno“ při další synchronizaci přepíšou podle zdroje – měňte je proto přímo tam. Kategorii, barvu a odkaz na registraci můžete doplnit zde, ty synchronizace nepřepisuje. Akce, které mají v popisu v Google Kalendáři slovo „internal“, se na web nenačítají.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "events".
@@ -363,6 +364,10 @@ export interface Event {
    * Vyplňuje se automaticky u akcí načtených z Google Kalendáře. Prázdné = akce byla přidána ručně zde.
    */
   googleCalendarEventId?: string | null;
+  /**
+   * Vyplňuje se automaticky u akcí načtených z Událostí na Facebooku spolku. Akce, která je i v Google Kalendáři, se nezdvojí: jen se k ní připojí odkaz na Facebook.
+   */
+  facebookEventId?: string | null;
   /**
    * When enabled, the slug will auto-generate from the title field on save and autosave.
    */
@@ -1020,7 +1025,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'syncGoogleCalendar' | 'schedulePublish';
+        taskSlug: 'inline' | 'syncGoogleCalendar' | 'importFacebookEvents' | 'schedulePublish';
         taskID: string;
         input?:
           | {
@@ -1053,7 +1058,7 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'syncGoogleCalendar' | 'schedulePublish') | null;
+  taskSlug?: ('inline' | 'syncGoogleCalendar' | 'importFacebookEvents' | 'schedulePublish') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1288,6 +1293,7 @@ export interface EventsSelect<T extends boolean = true> {
   categoryColor?: T;
   featured?: T;
   googleCalendarEventId?: T;
+  facebookEventId?: T;
   generateSlug?: T;
   slug?: T;
   updatedAt?: T;
@@ -2540,6 +2546,18 @@ export interface TaskSyncGoogleCalendar {
     synced?: number | null;
     created?: number | null;
     updated?: number | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskImportFacebookEvents".
+ */
+export interface TaskImportFacebookEvents {
+  input?: unknown;
+  output: {
+    created?: number | null;
+    updated?: number | null;
+    linked?: number | null;
   };
 }
 /**
