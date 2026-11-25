@@ -25,9 +25,9 @@ export const Events: CollectionConfig<'events'> = {
     listSearchableFields: ['title', 'location'],
     description:
       'Akce zobrazené na hlavní stránce a v kalendáři (/calendar). Na webu se zobrazují jen publikované akce. ' +
-      'Akce se každou hodinu automaticky načítají z Google Kalendáře spolku. U takto načtených akcí se ' +
+      'Akce se každou hodinu automaticky načítají z Google Kalendáře a z Událostí na Facebooku spolku. U takto načtených akcí se ' +
       'název, datum, čas, délka, místo, popis i stav „publikováno“ při další synchronizaci přepíšou podle ' +
-      'Google Kalendáře – měňte je proto přímo tam. Kategorii, barvu a odkaz na registraci můžete doplnit zde, ' +
+      'zdroje – měňte je proto přímo tam. Kategorii, barvu a odkaz na registraci můžete doplnit zde, ' +
       'ty synchronizace nepřepisuje. Akce, které mají v popisu v Google Kalendáři slovo „internal“, se na web nenačítají.',
   },
   fields: [
@@ -144,6 +144,20 @@ export const Events: CollectionConfig<'events'> = {
         readOnly: true,
         description:
           'Vyplňuje se automaticky u akcí načtených z Google Kalendáře. Prázdné = akce byla přidána ručně zde.',
+      },
+    },
+    {
+      name: 'facebookEventId',
+      type: 'text',
+      label: 'ID na Facebooku',
+      unique: true,
+      index: true,
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        description:
+          'Vyplňuje se automaticky u akcí načtených z Událostí na Facebooku spolku. ' +
+          'Akce, která je i v Google Kalendáři, se nezdvojí: jen se k ní připojí odkaz na Facebook.',
       },
     },
     slugField(),
