@@ -348,6 +348,10 @@ export interface Event {
    */
   description?: string | null;
   /**
+   * Zobrazí se v detailu akce v kalendáři. U akcí z Facebooku se doplní titulní fotka Události; vlastní obrázek, který sem nahrajete, import nepřepíše.
+   */
+  image?: (number | null) | Media;
+  /**
    * Kam vede tlačítko „Registrovat se“ v kalendáři (např. odkaz na Google formulář). Když necháte prázdné, použije se výchozí odkaz ze Stránky Kalendář; pokud není ani ten, tlačítko se nezobrazí. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
    */
   registrationUrl?: string | null;
@@ -1288,6 +1292,7 @@ export interface EventsSelect<T extends boolean = true> {
   duration?: T;
   location?: T;
   description?: T;
+  image?: T;
   registrationUrl?: T;
   category?: T;
   categoryColor?: T;
@@ -2097,6 +2102,10 @@ export interface CalendarPage {
      * Použije se u akcí, které nemají vlastní „Odkaz na registraci“. Když necháte prázdné, tlačítko se u takových akcí nezobrazí. Odkaz na stránku tohoto webu začíná lomítkem (např. /calendar nebo /aboutus). Odkaz na jiný web zadejte celý včetně https:// (např. https://www.instagram.com/…). Lze použít i mailto:email@example.cz nebo tel:+420…
      */
     defaultRegistrationUrl?: string | null;
+    /**
+     * U akcí načtených z Facebooku vede na jejich Událost, kde se lidé můžou přihlásit jako účastníci. Když necháte prázdné, tlačítko se nezobrazí.
+     */
+    facebookButtonLabel?: string | null;
     selectDayText?: string | null;
     /**
      * Místo {datum} se doplní vybraný den, např. „12. Listopad“.
@@ -2430,6 +2439,7 @@ export interface CalendarPageSelect<T extends boolean = true> {
         academicYearLabel?: T;
         registerButtonLabel?: T;
         defaultRegistrationUrl?: T;
+        facebookButtonLabel?: T;
         selectDayText?: T;
         noEventsText?: T;
       };

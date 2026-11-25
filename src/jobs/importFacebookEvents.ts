@@ -5,7 +5,10 @@ import type { Event } from '@/payload-types'
 import { formatDuration, TIME_ZONE, toSlug } from './syncGoogleCalendar'
 
 const GRAPH_API = 'https://graph.facebook.com/v27.0'
-const FIELDS = 'id,name,description,start_time,end_time,place,ticket_uri,is_canceled,event_times'
+const FIELDS =
+  'id,name,description,start_time,end_time,place,ticket_uri,is_canceled,event_times,cover{id,source}'
+const FACEBOOK_EVENT_URL = 'https://www.facebook.com/events/'
+const COVER_PREFIX = 'fb-cover-'
 
 type FacebookPlace = {
   name?: string
@@ -22,6 +25,7 @@ export type FacebookEvent = {
   ticket_uri?: string
   is_canceled?: boolean
   event_times?: { id: string; start_time: string; end_time?: string }[]
+  cover?: { id: string; source: string }
 }
 
 type EventData = {
@@ -32,7 +36,7 @@ type EventData = {
   duration?: string
   location?: string
   description?: string
-  registrationUrl: string
+  registrationUrl?: string
   facebookEventId: string
 }
 
@@ -94,10 +98,9 @@ export function toEventData(event: FacebookEvent): EventData[] {
       duration: end ? formatDuration(start, end, false) : undefined,
       location: formatPlace(event.place),
       description: event.description || undefined,
-      registrationUrl:
-        event.ticket_uri ||
-        registrationLinkFrom(event.description) ||
-        `https://www.facebook.com/events/${occurrence.id}`,
+      // No fallback to the Facebook event: the site links to it separately, and the
+      // registration button should only show for events people actually sign up for.
+      registrationUrl: event.ticket_uri || registrationLinkFrom(event.description),
       facebookEventId: occurrence.id,
     }
   })
@@ -120,7 +123,7 @@ function normalizeTitle(title: string): string {
   return title
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
 }
@@ -168,6 +171,76 @@ async function fetchUpcomingEvents(pageId: string, token: string): Promise<Faceb
   return events
 }
 
+/**
+ * Registration links the import set itself: the Facebook event page, which earlier versions used
+ * as a fallback. The import may replace these, but never a link an editor entered.
+ */
+function isImportedLink(url: string | null | undefined): boolean {
+  return !url || url.startsWith(FACEBOOK_EVENT_URL)
+}
+
+function isImportedCover(image: Event['image']): boolean {
+  return !image || (typeof image === 'object' && Boolean(image.filename?.startsWith(COVER_PREFIX)))
+}
+
+/**
+ * The event's cover photo as a Media document, downloaded once per Facebook photo id. Failures
+ * only cost the picture, never the event.
+ */
+async function coverMediaId(
+  payload: Payload,
+  req: PayloadRequest,
+  cover: FacebookEvent['cover'],
+  alt: string,
+  cache: Map<string, number | undefined>,
+): Promise<number | undefined> {
+  if (!cover?.id || !cover.source) return undefined
+  if (cache.has(cover.id)) return cache.get(cover.id)
+
+  let id: number | undefined
+  try {
+    const existing = await payload.find({
+      collection: 'media',
+      where: { filename: { like: `${COVER_PREFIX}${cover.id}` } },
+      limit: 1,
+      depth: 0,
+      req,
+    })
+    if (existing.docs[0]) {
+      id = existing.docs[0].id
+    } else {
+      const response = await fetch(cover.source)
+      const mimetype = response.headers.get('content-type')?.split(';')[0] ?? ''
+      if (!response.ok || !mimetype.startsWith('image/')) {
+        throw new Error(`cover download returned ${response.status} ${mimetype}`)
+      }
+      const data = Buffer.from(await response.arrayBuffer())
+      const extension = mimetype.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg'
+      const media = await payload.create({
+        collection: 'media',
+        data: { alt },
+        file: { data, mimetype, name: `${COVER_PREFIX}${cover.id}.${extension}`, size: data.length },
+        context: { disableRevalidate: true },
+        req,
+      })
+      id = media.id
+    }
+  } catch (error) {
+    payload.logger.warn(`Facebook import: no cover image for "${alt}": ${String(error)}`)
+  }
+  cache.set(cover.id, id)
+  return id
+}
+
+/** Removes a cover the import downloaded earlier once no event uses it anymore. */
+async function dropUnusedCover(payload: Payload, req: PayloadRequest, previous: Event['image']) {
+  if (!previous || typeof previous !== 'object' || !isImportedCover(previous)) return
+  const users = await payload.count({ collection: 'events', where: { image: { equals: previous.id } }, req })
+  if (users.totalDocs === 0) {
+    await payload.delete({ collection: 'media', id: previous.id, context: { disableRevalidate: true }, req })
+  }
+}
+
 /** A published Google Calendar event on the same Prague day with the same title, if any. */
 async function findGoogleTwin(
   payload: Payload,
@@ -205,6 +278,7 @@ export const importFacebookEventsHandler: TaskHandler<'importFacebookEvents'> = 
   }
 
   const facebookEvents = await fetchUpcomingEvents(pageId, token)
+  const covers = new Map<string, number | undefined>()
   const seenIds = new Set<string>()
   let created = 0
   let updated = 0
@@ -217,6 +291,8 @@ export const importFacebookEventsHandler: TaskHandler<'importFacebookEvents'> = 
     for (const data of toEventData(event)) {
       seenIds.add(data.facebookEventId)
       try {
+        const image = await coverMediaId(payload, req, event.cover, data.title, covers)
+
         const existing = await payload.find({
           collection: 'events',
           where: { facebookEventId: { equals: data.facebookEventId } },
@@ -225,9 +301,25 @@ export const importFacebookEventsHandler: TaskHandler<'importFacebookEvents'> = 
         })
         const doc = existing.docs[0]
 
-        // Events that also come from Google Calendar belong to that sync: only add the
-        // Facebook id and, if missing, the registration link.
-        if (doc?.googleCalendarEventId) continue
+        // Events that also come from Google Calendar belong to that sync. The import only adds
+        // the Facebook id, the registration link and the picture, and never replaces an editor's.
+        const extras = (target: Event) => ({
+          ...(isImportedLink(target.registrationUrl) && { registrationUrl: data.registrationUrl ?? null }),
+          ...(image && isImportedCover(target.image) && { image }),
+        })
+
+        if (doc?.googleCalendarEventId) {
+          await payload.update({
+            collection: 'events',
+            id: doc.id,
+            data: extras(doc),
+            context: { disableRevalidate: true },
+            req,
+          })
+          if (image) await dropUnusedCover(payload, req, doc.image)
+          linked++
+          continue
+        }
 
         const twin = await findGoogleTwin(payload, req, data)
         if (twin) {
@@ -244,38 +336,32 @@ export const importFacebookEventsHandler: TaskHandler<'importFacebookEvents'> = 
           await payload.update({
             collection: 'events',
             id: twin.id,
-            data: {
-              facebookEventId: data.facebookEventId,
-              ...(!twin.registrationUrl && { registrationUrl: data.registrationUrl }),
-            },
+            data: { facebookEventId: data.facebookEventId, ...extras(twin) },
             context: { disableRevalidate: true },
             req,
           })
+          if (image) await dropUnusedCover(payload, req, twin.image)
           linked++
           continue
         }
 
         if (doc) {
-          const { registrationUrl, ...synced } = data
+          const { registrationUrl: _registrationUrl, ...synced } = data
           await payload.update({
             collection: 'events',
             id: doc.id,
-            // Editors may replace the registration link (e.g. with a form), so keep theirs.
-            data: {
-              ...synced,
-              ...(!doc.registrationUrl && { registrationUrl }),
-              _status: 'published',
-            },
+            data: { ...synced, ...extras(doc), _status: 'published' },
             context: { disableRevalidate: true },
             req,
           })
+          if (image) await dropUnusedCover(payload, req, doc.image)
           updated++
           continue
         }
 
         await payload.create({
           collection: 'events',
-          data: { ...data, _status: 'published' },
+          data: { ...data, ...(image && { image }), _status: 'published' },
           draft: false,
           context: { disableRevalidate: true },
           req,

@@ -1,4 +1,6 @@
+// @vitest-environment node
 import { createLocalReq, getPayload, type Payload } from 'payload'
+import sharp from 'sharp'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -27,9 +29,9 @@ describe('toEventData', () => {
       duration: '3 hodiny',
       location: 'Klub Leitnerova, Leitnerova 1, Brno',
       description: 'Přijďte!',
-      registrationUrl: 'https://www.facebook.com/events/111',
       facebookEventId: '111',
     })
+    expect(data.registrationUrl).toBeUndefined()
     expect(data.date).toBe('2030-12-01T18:00:00.000Z')
   })
 
@@ -106,8 +108,14 @@ describe('importFacebookEventsHandler', () => {
     moved: 'test-fb-moved',
   }
 
+  let coverJpeg: Buffer
+  const COVER_URL = 'https://scontent.example/cover.jpg'
   const graphResponse = (events: FacebookEvent[]) =>
-    vi.fn(async () => new Response(JSON.stringify({ data: events }), { status: 200 }))
+    vi.fn(async (url: string | URL) =>
+      String(url).startsWith(COVER_URL)
+        ? new Response(new Uint8Array(coverJpeg), { status: 200, headers: { 'content-type': 'image/jpeg' } })
+        : new Response(JSON.stringify({ data: events }), { status: 200 }),
+    )
 
   const run = async () => {
     const req = await createLocalReq({}, payload)
@@ -119,11 +127,14 @@ describe('importFacebookEventsHandler', () => {
     name: 'Test FB akce',
     start_time: '2030-11-20T18:00:00+0100',
     end_time: '2030-11-20T20:00:00+0100',
+    cover: { id: 'test-cover-fresh', source: COVER_URL },
   }
   const twin: FacebookEvent = {
     id: ids.twin,
     name: 'TEST PLES PDF 2030',
     start_time: '2030-11-21T20:00:00+0100',
+    description: 'Přihlášky: https://docs.google.com/forms/d/e/test-ples/viewform',
+    cover: { id: 'test-cover-twin', source: COVER_URL },
   }
   const cancelled: FacebookEvent = {
     id: ids.cancelled,
@@ -134,6 +145,11 @@ describe('importFacebookEventsHandler', () => {
 
   beforeAll(async () => {
     payload = await getPayload({ config: await config })
+    coverJpeg = await sharp({
+      create: { width: 400, height: 210, channels: 3, background: '#1877f2' },
+    })
+      .jpeg()
+      .toBuffer()
     vi.stubEnv('FACEBOOK_PAGE_ID', 'test-page')
     vi.stubEnv('FACEBOOK_PAGE_TOKEN', 'test-token')
     const google = await payload.create({
@@ -143,6 +159,7 @@ describe('importFacebookEventsHandler', () => {
         slug: 'test-ples-pdf-google',
         date: '2030-11-21T18:00:00.000Z',
         googleCalendarEventId: 'test-google-twin',
+        registrationUrl: 'https://www.facebook.com/events/old-fallback',
         _status: 'published',
       },
       draft: false,
@@ -164,6 +181,10 @@ describe('importFacebookEventsHandler', () => {
       },
       context: { disableRevalidate: true },
     })
+    await payload.delete({
+      collection: 'media',
+      where: { filename: { like: 'fb-cover-test-cover' } },
+    })
   })
 
   it('creates new events, links Google Calendar twins and skips cancelled events', async () => {
@@ -176,10 +197,15 @@ describe('importFacebookEventsHandler', () => {
     })
     expect(created.docs).toHaveLength(1)
     expect(created.docs[0]).toMatchObject({ _status: 'published', time: '18:00', duration: '2 hodiny' })
+    expect(created.docs[0].registrationUrl ?? null).toBeNull()
+    const createdImage = created.docs[0].image
+    expect(typeof createdImage === 'object' && createdImage?.filename).toMatch(/^fb-cover-test-cover-fresh/)
 
     const linked = await payload.findByID({ collection: 'events', id: googleTwinId })
     expect(linked.facebookEventId).toBe(ids.twin)
-    expect(linked.registrationUrl).toBe(`https://www.facebook.com/events/${ids.twin}`)
+    // The old Facebook-page fallback is replaced by the real sign-up link from the description.
+    expect(linked.registrationUrl).toBe('https://docs.google.com/forms/d/e/test-ples/viewform')
+    expect(typeof linked.image === 'object' && linked.image?.filename).toMatch(/^fb-cover-test-cover-twin/)
     expect(linked.title).toBe('Test Ples PdF')
 
     const duplicates = await payload.find({

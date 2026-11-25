@@ -86,6 +86,17 @@ export const Events: CollectionConfig<'events'> = {
       label: 'Popis',
       admin: { description: 'Zobrazí se v detailu akce v kalendáři (/calendar).' },
     },
+    {
+      name: 'image',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Obrázek',
+      admin: {
+        description:
+          'Zobrazí se v detailu akce v kalendáři. U akcí z Facebooku se doplní titulní fotka Události; ' +
+          'vlastní obrázek, který sem nahrajete, import nepřepíše.',
+      },
+    },
     linkUrlField({
       name: 'registrationUrl',
       label: 'Odkaz na registraci',

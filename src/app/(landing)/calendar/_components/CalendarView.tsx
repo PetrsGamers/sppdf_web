@@ -1,8 +1,11 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
+import { Facebook } from 'lucide-react'
 import type { CalendarPage, Event } from '@/payload-types'
 import { calendarDefaults } from '@/CalendarPage/defaults'
+
+import { mediaSrcSet } from '../../_lib/mediaSrcSet'
 
 type Props = {
   events: Event[]
@@ -31,6 +34,7 @@ export function CalendarView({ events, texts, renderedAt }: Props) {
   const academicYearLabel = texts?.academicYearLabel ?? D.academicYearLabel
   const registerButtonLabel = texts?.registerButtonLabel ?? D.registerButtonLabel
   const defaultRegistrationUrl = texts?.defaultRegistrationUrl || D.defaultRegistrationUrl
+  const facebookButtonLabel = texts?.facebookButtonLabel ?? D.facebookButtonLabel
   const selectDayText = texts?.selectDayText ?? D.selectDayText
   const noEventsText = texts?.noEventsText ?? D.noEventsText
 
@@ -219,59 +223,83 @@ export function CalendarView({ events, texts, renderedAt }: Props) {
                   const eventDate = new Date(event.date)
                   const formattedDate = `${eventDate.getDate()}. ${MONTH_NAMES[eventDate.getMonth()]}`
                   const registrationUrl = event.registrationUrl || defaultRegistrationUrl
+                  const image = typeof event.image === 'object' ? event.image : null
 
                   return (
                     <div
                       key={event.id}
-                      className="bg-white rounded-2xl p-7 shadow-sm border border-stone-100"
+                      className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden"
                     >
-                      {event.category && (
-                        <div
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full ${colorClass} text-[10px] font-bold tracking-widest uppercase mb-4`}
-                        >
-                          {event.category.toUpperCase()}
-                        </div>
+                      {image?.url && (
+                        <img
+                          alt={image.alt || event.title}
+                          className="w-full aspect-[1.91/1] object-cover"
+                          src={image.url}
+                          srcSet={mediaSrcSet(image)}
+                          sizes="(min-width: 1024px) 40vw, 100vw"
+                          loading="lazy"
+                        />
                       )}
-                      <h3 className="text-2xl font-black font-headline tracking-tighter mb-5 leading-tight">
-                        {event.title}
-                      </h3>
-
-                      <div className="space-y-3 mb-5">
-                        <div className="flex items-center gap-3 text-sm">
-                          <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
-                            calendar_today
-                          </span>
-                          <span className="text-on-surface-variant">
-                            {formattedDate}{event.time ? `, ${event.time}` : ''}
-                          </span>
-                        </div>
-                        {event.location && (
-                          <div className="flex items-center gap-3 text-sm">
-                            <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
-                              location_on
-                            </span>
-                            <span className="text-on-surface-variant">{event.location}</span>
+                      <div className="p-7">
+                        {event.category && (
+                          <div
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full ${colorClass} text-[10px] font-bold tracking-widest uppercase mb-4`}
+                          >
+                            {event.category.toUpperCase()}
                           </div>
                         )}
+                        <h3 className="text-2xl font-black font-headline tracking-tighter mb-5 leading-tight">
+                          {event.title}
+                        </h3>
+
+                        <div className="space-y-3 mb-5">
+                          <div className="flex items-center gap-3 text-sm">
+                            <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
+                              calendar_today
+                            </span>
+                            <span className="text-on-surface-variant">
+                              {formattedDate}{event.time ? `, ${event.time}` : ''}
+                            </span>
+                          </div>
+                          {event.location && (
+                            <div className="flex items-center gap-3 text-sm">
+                              <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
+                                location_on
+                              </span>
+                              <span className="text-on-surface-variant">{event.location}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {event.description && (
+                          <p className="text-sm text-on-surface-variant leading-relaxed mb-6 whitespace-pre-line break-words">
+                            {event.description}
+                          </p>
+                        )}
+
+                        {registrationUrl && registerButtonLabel && (
+                          <a
+                            href={registrationUrl}
+                            className="hero-gradient text-on-primary w-full py-3.5 rounded-xl font-headline font-extrabold flex items-center justify-center gap-2 transition-transform hover:-translate-y-0.5 active:scale-[0.98] shadow-lg shadow-primary/20"
+                          >
+                            {registerButtonLabel}
+                            <span aria-hidden="true" className="material-symbols-outlined text-lg">
+                              arrow_forward
+                            </span>
+                          </a>
+                        )}
+                        {event.facebookEventId && facebookButtonLabel && (
+                          <a
+                            href={`https://www.facebook.com/events/${event.facebookEventId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`${registrationUrl && registerButtonLabel ? 'mt-3 ' : ''}w-full py-3 rounded-xl font-headline font-bold flex items-center justify-center gap-2 border border-stone-200 text-stone-700 hover:text-primary hover:border-primary/40 transition-colors`}
+                          >
+                            <Facebook aria-hidden="true" size={18} />
+                            {facebookButtonLabel}
+                          </a>
+                        )}
                       </div>
-
-                      {event.description && (
-                        <p className="text-sm text-on-surface-variant leading-relaxed mb-6">
-                          {event.description}
-                        </p>
-                      )}
-
-                      {registrationUrl && registerButtonLabel && (
-                        <a
-                          href={registrationUrl}
-                          className="hero-gradient text-on-primary w-full py-3.5 rounded-xl font-headline font-extrabold flex items-center justify-center gap-2 transition-transform hover:-translate-y-0.5 active:scale-[0.98] shadow-lg shadow-primary/20"
-                        >
-                          {registerButtonLabel}
-                          <span aria-hidden="true" className="material-symbols-outlined text-lg">
-                            arrow_forward
-                          </span>
-                        </a>
-                      )}
                     </div>
                   )
                 })}
