@@ -1,42 +1,9 @@
 import type { TaskHandler } from 'payload'
 import { google, type calendar_v3 } from 'googleapis'
 
-export function toSlug(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-}
-
-/**
- * Human-readable length of a Google Calendar event in Czech. All-day events come with plain
- * dates and an exclusive end date, so a one-day event spans exactly 24 hours.
- */
-export function formatDuration(start: Date, end: Date, allDay: boolean): string | undefined {
-  const diffMs = end.getTime() - start.getTime()
-  if (diffMs <= 0) return undefined
-
-  if (allDay) {
-    const days = Math.round(diffMs / (1000 * 60 * 60 * 24))
-    if (days <= 1) return 'Celý den'
-    return days < 5 ? `${days} dny` : `${days} dnů`
-  }
-
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-  const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
-
-  if (diffHours > 0 && diffMinutes > 0) return `${diffHours} h ${diffMinutes} min`
-  if (diffHours > 0) {
-    return diffHours === 1 ? '1 hodina' : diffHours < 5 ? `${diffHours} hodiny` : `${diffHours} hodin`
-  }
-  if (diffMinutes > 0) return `${diffMinutes} min`
-  return undefined
-}
+import { findTwin, formatDuration, TIME_ZONE, toSlug } from './eventSources'
 
 const CALENDAR_ID = 'sppdfmuni@gmail.com'
-export const TIME_ZONE = 'Europe/Prague'
 
 /**
  * Fetches all upcoming events, following pagination so that the
@@ -75,6 +42,7 @@ export const syncGoogleCalendarHandler: TaskHandler<'syncGoogleCalendar'> = asyn
 
   let created = 0
   let updated = 0
+  let onFacebook = 0
   let failed = 0
   const seenGoogleIds = new Set<string>()
 
@@ -132,6 +100,12 @@ export const syncGoogleCalendarHandler: TaskHandler<'syncGoogleCalendar'> = asyn
         req,
       })
 
+      // Events that are also on Facebook belong to the Facebook import, the primary source.
+      if (existing.docs[0]?.facebookEventId) {
+        onFacebook++
+        continue
+      }
+
       if (existing.docs.length > 0) {
         await payload.update({
           collection: 'events',
@@ -141,16 +115,30 @@ export const syncGoogleCalendarHandler: TaskHandler<'syncGoogleCalendar'> = asyn
           req,
         })
         updated++
-      } else {
-        await payload.create({
+        continue
+      }
+
+      const facebookTwin = await findTwin(payload, req, eventData, 'facebook')
+      if (facebookTwin) {
+        await payload.update({
           collection: 'events',
-          data: eventData,
-          draft: false,
+          id: facebookTwin.id,
+          data: { googleCalendarEventId: event.id },
           context: { disableRevalidate: true },
           req,
         })
-        created++
+        onFacebook++
+        continue
       }
+
+      await payload.create({
+        collection: 'events',
+        data: eventData,
+        draft: false,
+        context: { disableRevalidate: true },
+        req,
+      })
+      created++
     } catch (error) {
       failed++
       payload.logger.error(
@@ -177,7 +165,11 @@ export const syncGoogleCalendarHandler: TaskHandler<'syncGoogleCalendar'> = asyn
     })
 
     for (const doc of stale.docs) {
-      if (doc.googleCalendarEventId && !seenGoogleIds.has(doc.googleCalendarEventId)) {
+      if (
+        doc.googleCalendarEventId &&
+        !doc.facebookEventId &&
+        !seenGoogleIds.has(doc.googleCalendarEventId)
+      ) {
         await payload.update({
           collection: 'events',
           id: doc.id,
@@ -196,10 +188,10 @@ export const syncGoogleCalendarHandler: TaskHandler<'syncGoogleCalendar'> = asyn
   // revalidatePath() throws when called outside a request (e.g. from the jobs autoRun cron).
 
   payload.logger.info(
-    `Google Calendar sync complete: ${created} created, ${updated} updated, ${removed} unpublished, ${failed} failed`,
+    `Google Calendar sync complete: ${created} created, ${updated} updated, ${onFacebook} left to the Facebook import, ${removed} unpublished, ${failed} failed`,
   )
 
-  if (failed > 0 && created + updated === 0) {
+  if (failed > 0 && created + updated + onFacebook === 0) {
     throw new Error(`Google Calendar sync failed for all ${failed} events`)
   }
 

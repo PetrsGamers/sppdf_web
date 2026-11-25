@@ -319,7 +319,7 @@ export interface FolderInterface {
   createdAt: string;
 }
 /**
- * Akce zobrazené na hlavní stránce a v kalendáři (/calendar). Na webu se zobrazují jen publikované akce. Akce se každou hodinu automaticky načítají z Google Kalendáře a z Událostí na Facebooku spolku. U takto načtených akcí se název, datum, čas, délka, místo, popis i stav „publikováno“ při další synchronizaci přepíšou podle zdroje – měňte je proto přímo tam. Kategorii, barvu a odkaz na registraci můžete doplnit zde, ty synchronizace nepřepisuje. Akce, které mají v popisu v Google Kalendáři slovo „internal“, se na web nenačítají.
+ * Akce zobrazené na hlavní stránce a v kalendáři (/calendar). Na webu se zobrazují jen publikované akce. Akce se každou hodinu automaticky načítají z Událostí na Facebooku spolku; Google Kalendář je doplňuje a slouží jako záloha. U takto načtených akcí se název, datum, čas, délka, místo, popis i stav „publikováno“ při další synchronizaci přepíšou podle zdroje – měňte je proto přímo tam. Kategorii, barvu a odkaz na registraci můžete doplnit zde, ty synchronizace nepřepisuje. Akce, které mají v popisu v Google Kalendáři slovo „internal“, se na web nenačítají.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "events".
@@ -369,7 +369,7 @@ export interface Event {
    */
   googleCalendarEventId?: string | null;
   /**
-   * Vyplňuje se automaticky u akcí načtených z Událostí na Facebooku spolku. Akce, která je i v Google Kalendáři, se nezdvojí: jen se k ní připojí odkaz na Facebook.
+   * Vyplňuje se automaticky u akcí načtených z Událostí na Facebooku spolku. Akce, která je i v Google Kalendáři, se nezdvojí: Facebook ji převezme a Google Kalendář ji pak nepřepisuje.
    */
   facebookEventId?: string | null;
   /**

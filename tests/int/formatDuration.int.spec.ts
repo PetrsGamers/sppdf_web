@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatDuration } from '@/jobs/syncGoogleCalendar'
+import { formatDuration } from '@/jobs/eventSources'
 
 describe('formatDuration', () => {
   it('shows a one-day all-day event as "Celý den", not 24 hours', () => {

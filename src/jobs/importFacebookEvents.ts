@@ -2,7 +2,7 @@ import type { Payload, PayloadRequest, TaskHandler } from 'payload'
 
 import type { Event } from '@/payload-types'
 
-import { formatDuration, TIME_ZONE, toSlug } from './syncGoogleCalendar'
+import { findTwin, formatDuration, TIME_ZONE, toSlug } from './eventSources'
 
 const GRAPH_API = 'https://graph.facebook.com/v27.0'
 const FIELDS =
@@ -114,33 +114,6 @@ function formatPlace(place: FacebookPlace | undefined): string | undefined {
   return [...new Set(parts)].join(', ') || undefined
 }
 
-/** Calendar day in Prague, e.g. "2026-12-01". */
-export function pragueDay(iso: string): string {
-  return new Date(iso).toLocaleDateString('sv-SE', { timeZone: TIME_ZONE })
-}
-
-function normalizeTitle(title: string): string {
-  return title
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim()
-}
-
-/**
- * True when two titles name the same event: equal after dropping case, accents and punctuation,
- * or one contains the other ("Ples PdF" vs "PLES PDF 2027").
- */
-export function sameTitle(a: string, b: string): boolean {
-  const x = normalizeTitle(a)
-  const y = normalizeTitle(b)
-  if (!x || !y) return false
-  if (x === y) return true
-  const [shorter, longer] = x.length <= y.length ? [x, y] : [y, x]
-  return shorter.length >= 4 && longer.includes(shorter)
-}
-
 async function fetchUpcomingEvents(pageId: string, token: string): Promise<FacebookEvent[]> {
   const events: FacebookEvent[] = []
   const params = new URLSearchParams({
@@ -241,32 +214,6 @@ async function dropUnusedCover(payload: Payload, req: PayloadRequest, previous: 
   }
 }
 
-/** A published Google Calendar event on the same Prague day with the same title, if any. */
-async function findGoogleTwin(
-  payload: Payload,
-  req: PayloadRequest,
-  data: EventData,
-): Promise<Event | undefined> {
-  const day = pragueDay(data.date)
-  const from = new Date(new Date(data.date).getTime() - 36 * 60 * 60 * 1000).toISOString()
-  const to = new Date(new Date(data.date).getTime() + 36 * 60 * 60 * 1000).toISOString()
-  const candidates = await payload.find({
-    collection: 'events',
-    where: {
-      and: [
-        { googleCalendarEventId: { exists: true } },
-        { date: { greater_than_equal: from } },
-        { date: { less_than_equal: to } },
-      ],
-    },
-    limit: 20,
-    req,
-  })
-  return candidates.docs.find(
-    (doc) => pragueDay(doc.date) === day && sameTitle(doc.title, data.title),
-  )
-}
-
 export const importFacebookEventsHandler: TaskHandler<'importFacebookEvents'> = async ({ req }) => {
   const { payload } = req
   const pageId = process.env.FACEBOOK_PAGE_ID
@@ -301,61 +248,50 @@ export const importFacebookEventsHandler: TaskHandler<'importFacebookEvents'> = 
         })
         const doc = existing.docs[0]
 
-        // Events that also come from Google Calendar belong to that sync. The import only adds
-        // the Facebook id, the registration link and the picture, and never replaces an editor's.
-        const extras = (target: Event) => ({
-          ...(isImportedLink(target.registrationUrl) && { registrationUrl: data.registrationUrl ?? null }),
-          ...(image && isImportedCover(target.image) && { image }),
-        })
+        // Facebook is the primary source: it overwrites everything it knows about the event,
+        // except a registration link or picture an editor set. The slug stays as created.
+        const fromFacebook = (target: Event) => {
+          const { registrationUrl, slug: _slug, ...fields } = data
+          return {
+            ...fields,
+            ...(isImportedLink(target.registrationUrl) && { registrationUrl: registrationUrl ?? null }),
+            ...(image && isImportedCover(target.image) && { image }),
+            _status: 'published' as const,
+          }
+        }
 
-        if (doc?.googleCalendarEventId) {
+        if (doc) {
+          // A Facebook-only copy created before Google Calendar had the event (or before a date
+          // was fixed) is merged into the Google Calendar event, so the site shows it once.
+          const twin = doc.googleCalendarEventId ? undefined : await findTwin(payload, req, data, 'google')
+          if (twin) {
+            await payload.delete({ collection: 'events', id: doc.id, context: { disableRevalidate: true }, req })
+          }
+          const target = twin ?? doc
           await payload.update({
             collection: 'events',
-            id: doc.id,
-            data: extras(doc),
+            id: target.id,
+            data: fromFacebook(target),
             context: { disableRevalidate: true },
             req,
           })
-          if (image) await dropUnusedCover(payload, req, doc.image)
-          linked++
+          if (image) await dropUnusedCover(payload, req, target.image)
+          if (twin) linked++
+          else updated++
           continue
         }
 
-        const twin = await findGoogleTwin(payload, req, data)
+        const twin = await findTwin(payload, req, data, 'google')
         if (twin) {
-          // A copy created earlier (e.g. before the date was fixed on Facebook) would show the
-          // event twice, and it holds the unique Facebook id the twin needs.
-          if (doc) {
-            await payload.delete({
-              collection: 'events',
-              id: doc.id,
-              context: { disableRevalidate: true },
-              req,
-            })
-          }
           await payload.update({
             collection: 'events',
             id: twin.id,
-            data: { facebookEventId: data.facebookEventId, ...extras(twin) },
+            data: fromFacebook(twin),
             context: { disableRevalidate: true },
             req,
           })
           if (image) await dropUnusedCover(payload, req, twin.image)
           linked++
-          continue
-        }
-
-        if (doc) {
-          const { registrationUrl: _registrationUrl, ...synced } = data
-          await payload.update({
-            collection: 'events',
-            id: doc.id,
-            data: { ...synced, ...extras(doc), _status: 'published' },
-            context: { disableRevalidate: true },
-            req,
-          })
-          if (image) await dropUnusedCover(payload, req, doc.image)
-          updated++
           continue
         }
 
@@ -376,14 +312,14 @@ export const importFacebookEventsHandler: TaskHandler<'importFacebookEvents'> = 
     }
   }
 
-  // Unpublish upcoming Facebook-only events that were cancelled or deleted on Facebook.
+  // Unpublish upcoming events that were cancelled or deleted on Facebook. This only runs after a
+  // successful read, so a broken token never takes events down; Google Calendar keeps adding them.
   let unpublished = 0
   const stale = await payload.find({
     collection: 'events',
     where: {
       and: [
         { facebookEventId: { exists: true } },
-        { googleCalendarEventId: { exists: false } },
         { _status: { equals: 'published' } },
         { date: { greater_than_equal: new Date().toISOString() } },
       ],
