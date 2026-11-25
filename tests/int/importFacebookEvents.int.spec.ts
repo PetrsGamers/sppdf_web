@@ -7,10 +7,10 @@ import {
   cleanTitle,
   importFacebookEventsHandler,
   registrationLinkFrom,
-  sameTitle,
   toEventData,
   type FacebookEvent,
 } from '@/jobs/importFacebookEvents'
+import { sameEvent, sameTitle } from '@/jobs/eventSources'
 import config from '@/payload.config'
 
 describe('toEventData', () => {
@@ -95,6 +95,16 @@ describe('sameTitle', () => {
     expect(sameTitle('Vše za 25 party!', 'vse za 25 party')).toBe(true)
     expect(sameTitle('Beerpong IV.', 'Pubkvíz')).toBe(false)
     expect(sameTitle('PdF', 'Ples PdF')).toBe(false)
+  })
+})
+
+describe('sameEvent', () => {
+  it('matches on the same Prague day by title or by start time', () => {
+    const fb = { date: '2030-12-02T20:00:00.000Z', title: 'PYŽAMOVÁ VŠE ZA 25,- PÁRTY', time: '21:00' }
+    expect(sameEvent(fb, { date: '2030-12-02T08:00:00.000Z', title: 'vše za 25 party' })).toBe(true)
+    expect(sameEvent(fb, { date: '2030-12-02T20:00:00.000Z', title: 'Večírek', time: '21:00' })).toBe(true)
+    expect(sameEvent(fb, { date: '2030-12-02T18:00:00.000Z', title: 'Večírek', time: '19:00' })).toBe(false)
+    expect(sameEvent(fb, { date: '2030-12-03T20:00:00.000Z', title: 'vše za 25 party' })).toBe(false)
   })
 })
 
@@ -206,13 +216,14 @@ describe('importFacebookEventsHandler', () => {
     // The old Facebook-page fallback is replaced by the real sign-up link from the description.
     expect(linked.registrationUrl).toBe('https://docs.google.com/forms/d/e/test-ples/viewform')
     expect(typeof linked.image === 'object' && linked.image?.filename).toMatch(/^fb-cover-test-cover-twin/)
-    expect(linked.title).toBe('Test Ples PdF')
+    // Facebook is the primary source, so it also sets the title, time and description.
+    expect(linked).toMatchObject({ title: 'TEST PLES PDF 2030', time: '20:00', description: twin.description })
 
-    const duplicates = await payload.find({
+    const sameFacebookEvent = await payload.find({
       collection: 'events',
-      where: { title: { equals: twin.name } },
+      where: { facebookEventId: { equals: ids.twin } },
     })
-    expect(duplicates.totalDocs).toBe(0)
+    expect(sameFacebookEvent.docs.map((doc) => doc.id)).toEqual([googleTwinId])
 
     const skipped = await payload.find({
       collection: 'events',
@@ -221,7 +232,7 @@ describe('importFacebookEventsHandler', () => {
     expect(skipped.totalDocs).toBe(0)
   })
 
-  it('unpublishes Facebook-only events that disappear, but leaves linked Google events alone', async () => {
+  it('unpublishes events that disappear from Facebook, including linked ones', async () => {
     vi.stubGlobal('fetch', graphResponse([]))
     await run()
 
@@ -232,8 +243,19 @@ describe('importFacebookEventsHandler', () => {
     })
     expect(removed.docs[0]._status).toBe('draft')
 
-    const linked = await payload.findByID({ collection: 'events', id: googleTwinId })
-    expect(linked._status).toBe('published')
+    const linked = await payload.findByID({ collection: 'events', id: googleTwinId, draft: true })
+    expect(linked._status).toBe('draft')
+  })
+
+  it('changes nothing when the token stops working', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(JSON.stringify({ error: { code: 190, message: 'expired' } }), { status: 400 })),
+    )
+    const before = await payload.count({ collection: 'events', where: { _status: { equals: 'published' } } })
+    await expect(run()).rejects.toThrow('Facebook Graph API error 190')
+    const after = await payload.count({ collection: 'events', where: { _status: { equals: 'published' } } })
+    expect(after.totalDocs).toBe(before.totalDocs)
   })
 
   it('replaces its own copy with a link once the Facebook date matches a Google event', async () => {
@@ -270,6 +292,6 @@ describe('importFacebookEventsHandler', () => {
       where: { facebookEventId: { equals: ids.moved } },
     })
     expect(after.docs.map((doc) => doc.id)).toEqual([google.id])
-    expect(after.docs[0].title).toBe('test pyzamova party')
+    expect(after.docs[0].title).toBe('TEST PYŽAMOVÁ PÁRTY')
   })
 })
