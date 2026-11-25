@@ -6,6 +6,7 @@ import type { Media } from '@/payload-types'
 import { siteDefaults } from '@/SiteSettings/defaults'
 
 import { getGlobal } from '../_lib/getGlobal'
+import { resolveSocialLinks } from '../_lib/socialLinks'
 import { LandingFooter, type Brand } from './LandingFooter'
 import { LandingNav } from './LandingNav'
 
@@ -44,7 +45,11 @@ export async function SiteShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="cs" className={`${plusJakarta.variable} ${materialSymbols.variable}`}>
       <body className="bg-background text-on-surface font-body selection:bg-primary-fixed selection:text-on-primary-fixed">
-        <LandingNav nav={landingPage.nav} brand={brand} />
+        <LandingNav
+          nav={landingPage.nav}
+          brand={brand}
+          socialLinks={resolveSocialLinks(landingPage.footer)}
+        />
         {children}
         <LandingFooter footer={landingPage.footer} brand={brand} />
       </body>

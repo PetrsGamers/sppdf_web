@@ -45,6 +45,14 @@ test.describe('Frontend', () => {
     await context.close()
   })
 
+  test('links Facebook and Instagram in the menu and the footer', async ({ page }) => {
+    await page.goto('http://localhost:3000/')
+    for (const href of ['https://www.facebook.com/sppdfmuni', 'https://www.instagram.com/sppdf_muni/']) {
+      await expect(page.locator(`nav a[href="${href}"]`), href).toBeVisible()
+      await expect(page.locator(`footer a[href="${href}"]`), href).toHaveAttribute('target', '_blank')
+    }
+  })
+
   test('sends security headers and hides x-powered-by', async ({ request }) => {
     const headers = (await request.get('http://localhost:3000/')).headers()
     expect(headers['strict-transport-security']).toContain('max-age=')

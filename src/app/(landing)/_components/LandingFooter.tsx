@@ -1,7 +1,9 @@
 import type { LandingPage } from '@/payload-types'
 import { landingDefaults } from '@/LandingPage/defaults'
 
+import { resolveSocialLinks } from '../_lib/socialLinks'
 import { withCurrentYear } from './highlight'
+import { isExternal, SocialIcon } from './SocialIcon'
 
 const D = landingDefaults.footer
 
@@ -16,7 +18,6 @@ type Props = {
   brand: Brand
 }
 
-type SocialLink = { id?: string | null; icon: string; label?: string | null; url: string }
 type LinkColumn = {
   id?: string | null
   heading: string
@@ -25,10 +26,7 @@ type LinkColumn = {
 
 export function LandingFooter({ footer, brand }: Props) {
   const description = footer?.description ?? D.description
-  const socialLinks: SocialLink[] =
-    footer?.socialLinks && footer.socialLinks.length > 0
-      ? footer.socialLinks
-      : D.socialLinks.map((link) => ({ ...link }))
+  const socialLinks = resolveSocialLinks(footer)
   const linkColumns: LinkColumn[] =
     footer?.linkColumns && footer.linkColumns.length > 0
       ? footer.linkColumns
@@ -58,10 +56,9 @@ export function LandingFooter({ footer, brand }: Props) {
                   aria-label={social.label || social.icon}
                   className="w-10 h-10 rounded-full bg-white border border-stone-200 flex items-center justify-center text-stone-600 hover:text-primary transition-colors"
                   href={social.url}
+                  {...(isExternal(social.url) && { target: '_blank', rel: 'noopener noreferrer' })}
                 >
-                  <span aria-hidden="true" className="material-symbols-outlined text-xl">
-                    {social.icon}
-                  </span>
+                  <SocialIcon link={social} size={20} />
                 </a>
               ))}
             </div>
