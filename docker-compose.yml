@@ -1,31 +1,16 @@
-version: '3'
-
+# Local development database. Production runs on Coolify (Nixpacks), not from this file.
 services:
-  payload:
-    image: node:18-alpine
+  postgres:
+    image: postgres:18
     ports:
-      - '3000:3000'
+      - '127.0.0.1:54320:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: sppdf
+      # Throwaway dev database reachable only from this machine, so no password.
+      POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
-      - .:/home/node/app
-      - node_modules:/home/node/app/node_modules
-    working_dir: /home/node/app/
-    command: sh -c "yarn install && yarn dev"
-    depends_on:
-      - mongo
-    env_file:
-      - .env
-
-  mongo:
-    image: mongo:latest
-    ports:
-      - '27017:27017'
-    command:
-      - --storageEngine=wiredTiger
-    volumes:
-      - data:/data/db
-    logging:
-      driver: none
+      - pgdata:/var/lib/postgresql
 
 volumes:
-  data:
-  node_modules:
+  pgdata:

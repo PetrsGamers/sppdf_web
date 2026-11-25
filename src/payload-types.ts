@@ -318,7 +318,7 @@ export interface FolderInterface {
   createdAt: string;
 }
 /**
- * Akce zobrazené na hlavní stránce a v kalendáři (/calendar). Na webu se zobrazují jen publikované akce. Akce se každý den ráno automaticky načítají z Google Kalendáře spolku. U takto načtených akcí se název, datum, čas, délka, místo, popis i stav „publikováno“ při další synchronizaci přepíšou podle Google Kalendáře – měňte je proto přímo tam. Kategorii, barvu a odkaz na registraci můžete doplnit zde, ty synchronizace nepřepisuje. Akce, které mají v popisu v Google Kalendáři slovo „internal“, se na web nenačítají.
+ * Akce zobrazené na hlavní stránce a v kalendáři (/calendar). Na webu se zobrazují jen publikované akce. Akce se každou hodinu automaticky načítají z Google Kalendáře spolku. U takto načtených akcí se název, datum, čas, délka, místo, popis i stav „publikováno“ při další synchronizaci přepíšou podle Google Kalendáře – měňte je proto přímo tam. Kategorii, barvu a odkaz na registraci můžete doplnit zde, ty synchronizace nepřepisuje. Akce, které mají v popisu v Google Kalendáři slovo „internal“, se na web nenačítají.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "events".

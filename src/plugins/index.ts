@@ -13,7 +13,7 @@ import { beforeSyncWithSearch } from '@/search/beforeSync'
 import { Page, Post } from '@/payload-types'
 import { getServerSideURL } from '@/utilities/getURL'
 import { siteDefaults } from '@/SiteSettings/defaults'
-import { templateAdmin } from '@/utilities/templateAdmin'
+import { templateAccess, templateAdmin } from '@/utilities/templateAdmin'
 
 const generateTitle: GenerateTitle<Post | Page> = ({ doc }) => {
   return doc?.title
@@ -32,6 +32,7 @@ export const plugins: Plugin[] = [
     collections: ['pages', 'posts'],
     overrides: {
       admin: templateAdmin,
+      access: templateAccess,
       // @ts-expect-error - This is a valid override, mapped fields don't resolve to the same type
       fields: ({ defaultFields }) => {
         return defaultFields.map((field) => {
@@ -65,9 +66,11 @@ export const plugins: Plugin[] = [
     },
     formSubmissionOverrides: {
       admin: templateAdmin,
+      access: templateAccess,
     },
     formOverrides: {
       admin: templateAdmin,
+      access: templateAccess,
       fields: ({ defaultFields }) => {
         return defaultFields.map((field) => {
           if ('name' in field && field.name === 'confirmationMessage') {
@@ -94,6 +97,7 @@ export const plugins: Plugin[] = [
     beforeSync: beforeSyncWithSearch,
     searchOverrides: {
       admin: templateAdmin,
+      access: templateAccess,
       fields: ({ defaultFields }) => {
         return [...defaultFields, ...searchFields]
       },

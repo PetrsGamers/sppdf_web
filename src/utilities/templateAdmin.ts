@@ -5,6 +5,9 @@
  *
  * Developers can show them again by setting PAYLOAD_SHOW_TEMPLATE_COLLECTIONS=true.
  */
+import { authenticated } from '@/access/authenticated'
+import { authenticatedOrNone } from '@/access/authenticatedOrNone'
+
 export const showTemplateCollections = process.env.PAYLOAD_SHOW_TEMPLATE_COLLECTIONS === 'true'
 
 export const TEMPLATE_GROUP = 'Šablona (nepoužívá se)'
@@ -13,3 +16,11 @@ export const templateAdmin = {
   group: TEMPLATE_GROUP,
   hidden: !showTemplateCollections,
 } as const
+
+/** Template collections are not part of the public site, so their API is closed to anonymous visitors. */
+export const templateAccess = {
+  create: authenticated,
+  read: authenticatedOrNone,
+  update: authenticated,
+  delete: authenticated,
+}

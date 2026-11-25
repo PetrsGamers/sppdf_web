@@ -25,7 +25,7 @@ export const Events: CollectionConfig<'events'> = {
     listSearchableFields: ['title', 'location'],
     description:
       'Akce zobrazené na hlavní stránce a v kalendáři (/calendar). Na webu se zobrazují jen publikované akce. ' +
-      'Akce se každý den ráno automaticky načítají z Google Kalendáře spolku. U takto načtených akcí se ' +
+      'Akce se každou hodinu automaticky načítají z Google Kalendáře spolku. U takto načtených akcí se ' +
       'název, datum, čas, délka, místo, popis i stav „publikováno“ při další synchronizaci přepíšou podle ' +
       'Google Kalendáře – měňte je proto přímo tam. Kategorii, barvu a odkaz na registraci můžete doplnit zde, ' +
       'ty synchronizace nepřepisuje. Akce, které mají v popisu v Google Kalendáři slovo „internal“, se na web nenačítají.',

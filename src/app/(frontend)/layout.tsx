@@ -1,52 +1,20 @@
 import type { Metadata } from 'next'
-
-import { cn } from '@/utilities/ui'
-import { GeistMono } from 'geist/font/mono'
-import { GeistSans } from 'geist/font/sans'
 import React from 'react'
 
-import { AdminBar } from '@/components/AdminBar'
-import { Footer } from '@/Footer/Component'
-import { Header } from '@/Header/Component'
+import { SiteShell } from '@/app/(landing)/_components/SiteShell'
+import { buildSiteMetadata } from '@/app/(landing)/_lib/metadata'
 import { Providers } from '@/providers'
-import { InitTheme } from '@/providers/Theme/InitTheme'
-import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
-import { draftMode } from 'next/headers'
 
-import './globals.css'
-import { getServerSideURL } from '@/utilities/getURL'
-
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const { isEnabled } = await draftMode()
-
-  return (
-    <html className={cn(GeistSans.variable, GeistMono.variable)} lang="cs" suppressHydrationWarning>
-      <head>
-        <InitTheme />
-        <link href="/favicon.ico" rel="icon" sizes="32x32" />
-        <link href="/favicon.svg" rel="icon" type="image/svg+xml" />
-      </head>
-      <body>
-        <Providers>
-          <AdminBar
-            adminBarProps={{
-              preview: isEnabled,
-            }}
-          />
-
-          <Header />
-          {children}
-          <Footer />
-        </Providers>
-      </body>
-    </html>
-  )
+// Template routes (/posts, /search, /[slug]) are not part of the site, but their 404 page is
+// what visitors see for unknown single-segment URLs, so this group uses the site's shell too.
+export async function generateMetadata(): Promise<Metadata> {
+  return buildSiteMetadata()
 }
 
-export const metadata: Metadata = {
-  metadataBase: new URL(getServerSideURL()),
-  openGraph: mergeOpenGraph(),
-  twitter: {
-    card: 'summary_large_image',
-  },
+export default function FrontendLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <SiteShell>
+      <Providers>{children}</Providers>
+    </SiteShell>
+  )
 }

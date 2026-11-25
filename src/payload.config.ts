@@ -105,7 +105,9 @@ export default buildConfig({
   // Pages, Posts, Categories, Header and Footer are unused template leftovers (hidden in admin,
   // see src/utilities/templateAdmin.ts) – kept registered so their DB tables stay untouched.
   collections: [TeamMembers, Media, Events, Users, Pages, Posts, Categories],
+  serverURL: getServerSideURL(),
   cors: [getServerSideURL()].filter(Boolean),
+  csrf: [getServerSideURL()].filter(Boolean),
   globals: [LandingPage, AboutPage, CalendarPage, SiteSettings, Header, Footer],
   i18n: {
     // Admin UI in Czech; editors can switch to English in their account settings.

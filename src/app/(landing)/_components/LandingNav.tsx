@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import type { LandingPage } from '@/payload-types'
@@ -14,6 +15,7 @@ type Props = {
 
 export function LandingNav({ nav, brand }: Props) {
   const pathname = usePathname()
+  const [menuOpen, setMenuOpen] = useState(false)
   const links: { id?: string | null; label: string; url: string }[] =
     nav?.links && nav.links.length > 0 ? nav.links : [...D.nav.links]
   const ctaLabel = nav?.ctaLabel ?? D.nav.ctaLabel
@@ -32,7 +34,7 @@ export function LandingNav({ nav, brand }: Props) {
         </div>
         <div className="hidden md:flex items-center space-x-8">
           {links.map((link, i) => {
-            const isActive = link.url === '/' ? pathname === '/' : pathname.startsWith(link.url)
+            const isActive = isActiveLink(link.url, pathname)
             return (
               <Link
                 key={link.id ?? i}
@@ -52,13 +54,61 @@ export function LandingNav({ nav, brand }: Props) {
           {ctaLabel && (
             <a
               href={ctaLink}
-              className="bg-primary hover:bg-primary-container text-on-primary px-6 py-2.5 rounded-full font-headline font-bold transition-all active:scale-95 shadow-lg shadow-primary/20"
+              className="hidden md:inline-block bg-primary hover:bg-primary-container text-on-primary px-6 py-2.5 rounded-full font-headline font-bold transition-all active:scale-95 shadow-lg shadow-primary/20"
+            >
+              {ctaLabel}
+            </a>
+          )}
+          <button
+            type="button"
+            className="md:hidden flex items-center justify-center h-11 w-11 rounded-full text-stone-900 hover:bg-stone-100 transition-colors"
+            aria-controls="mobile-menu"
+            aria-expanded={menuOpen}
+            aria-label={menuOpen ? 'Zavřít menu' : 'Otevřít menu'}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <span className="material-symbols-outlined text-3xl" aria-hidden="true">
+              {menuOpen ? 'close' : 'menu'}
+            </span>
+          </button>
+        </div>
+      </div>
+      {menuOpen && (
+        <div id="mobile-menu" className="md:hidden border-t border-stone-100 bg-white px-6 pb-6">
+          <ul className="flex flex-col py-2">
+            {links.map((link, i) => {
+              const isActive = isActiveLink(link.url, pathname)
+              return (
+                <li key={link.id ?? i}>
+                  <Link
+                    className={`block py-3 font-headline font-bold text-lg tracking-tight ${
+                      isActive ? 'text-primary' : 'text-stone-700 hover:text-primary'
+                    }`}
+                    aria-current={isActive ? 'page' : undefined}
+                    href={link.url}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+          {ctaLabel && (
+            <a
+              href={ctaLink}
+              className="block text-center bg-primary hover:bg-primary-container text-on-primary px-6 py-3 rounded-full font-headline font-bold transition-all active:scale-95 shadow-lg shadow-primary/20"
+              onClick={() => setMenuOpen(false)}
             >
               {ctaLabel}
             </a>
           )}
         </div>
-      </div>
+      )}
     </nav>
   )
+}
+
+function isActiveLink(url: string, pathname: string): boolean {
+  return url === '/' ? pathname === '/' : pathname.startsWith(url)
 }

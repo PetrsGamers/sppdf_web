@@ -10,6 +10,31 @@ function toSlug(text: string): string {
     .replace(/^-|-$/g, '')
 }
 
+/**
+ * Human-readable length of a Google Calendar event in Czech. All-day events come with plain
+ * dates and an exclusive end date, so a one-day event spans exactly 24 hours.
+ */
+export function formatDuration(start: Date, end: Date, allDay: boolean): string | undefined {
+  const diffMs = end.getTime() - start.getTime()
+  if (diffMs <= 0) return undefined
+
+  if (allDay) {
+    const days = Math.round(diffMs / (1000 * 60 * 60 * 24))
+    if (days <= 1) return 'Celý den'
+    return days < 5 ? `${days} dny` : `${days} dnů`
+  }
+
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+  const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
+
+  if (diffHours > 0 && diffMinutes > 0) return `${diffHours} h ${diffMinutes} min`
+  if (diffHours > 0) {
+    return diffHours === 1 ? '1 hodina' : diffHours < 5 ? `${diffHours} hodiny` : `${diffHours} hodin`
+  }
+  if (diffMinutes > 0) return `${diffMinutes} min`
+  return undefined
+}
+
 const CALENDAR_ID = 'sppdfmuni@gmail.com'
 const TIME_ZONE = 'Europe/Prague'
 
@@ -78,23 +103,10 @@ export const syncGoogleCalendarHandler: TaskHandler<'syncGoogleCalendar'> = asyn
       })
     }
 
-    // Calculate duration
-    let duration: string | undefined
     const endDateTime = event.end?.dateTime || event.end?.date
-    if (endDateTime) {
-      const endDate = new Date(endDateTime)
-      const diffMs = endDate.getTime() - startDate.getTime()
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-      const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60))
-
-      if (diffHours > 0 && diffMinutes > 0) {
-        duration = `${diffHours} h ${diffMinutes} min`
-      } else if (diffHours > 0) {
-        duration = diffHours === 1 ? '1 hodina' : diffHours < 5 ? `${diffHours} hodiny` : `${diffHours} hodin`
-      } else if (diffMinutes > 0) {
-        duration = `${diffMinutes} min`
-      }
-    }
+    const duration = endDateTime
+      ? formatDuration(startDate, new Date(endDateTime), !event.start?.dateTime)
+      : undefined
 
     const eventData = {
       title: event.summary,
